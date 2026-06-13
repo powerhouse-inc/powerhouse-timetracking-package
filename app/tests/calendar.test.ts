@@ -20,17 +20,16 @@ import { test, expect } from "@playwright/test";
 
 test("T01: Calendar page renders at URL level", async ({ page }) => {
   await page.goto("/calendar");
+  await page.waitForTimeout(1500); // Let hydration + webServer settle
 
   // Page should have loaded — check either calendar content or login page
   const calendarH1 = page.locator("text=Calendar");
   const loginTitle = page.locator("text=Powerhouse Time");
 
-  // Either the calendar renders (with auth) or login screen shows
-  // The route itself exists and responds
   const hasCalendar = await calendarH1.count();
   const hasLogin = await loginTitle.count();
 
-  // At least one of them should be present
+  // At least one should be present (auth redirect or calendar content)
   expect(hasCalendar + hasLogin).toBeGreaterThan(0);
 });
 
