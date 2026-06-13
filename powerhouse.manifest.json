@@ -17,7 +17,29 @@
     }
   ],
   "apps": [],
-  "editors": [],
+  "editors": [
+    {
+      "id": "timesheet-editor",
+      "name": "timesheet-editor",
+      "documentTypes": [
+        "powerhouse/timesheet"
+      ]
+    },
+    {
+      "name": "workspace-editor",
+      "id": "workspace-editor",
+      "documentTypes": [
+        "powerhouse/timetracking-workspace"
+      ]
+    },
+    {
+      "id": "tt-drive",
+      "name": "Timetracking — Team",
+      "documentTypes": [
+        "powerhouse/document-drive"
+      ]
+    }
+  ],
   "processors": [
     {
       "id": "timetracking-read",
@@ -26,8 +48,8 @@
   ],
   "subgraphs": [
     {
-      "name": "timetracking-read",
-      "id": "timetracking-read"
+      "id": "timetracking-read",
+      "name": "timetracking-read"
     }
   ],
   "config": []

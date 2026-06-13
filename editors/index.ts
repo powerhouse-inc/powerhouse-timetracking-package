@@ -1,4 +1,2 @@
-/**
- * WARNING: DO NOT EDIT
- * This file is auto-generated and updated by codegen
- */
+export { TimesheetEditor } from "./timesheet-editor/module.js";
+export { WorkspaceEditor } from "./workspace-editor/module.js";
