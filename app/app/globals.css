@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: radial-gradient(
+      1200px 600px at 85% -10%,
+      rgba(229, 124, 216, 0.12),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 500px at -10% 110%,
+      rgba(168, 85, 247, 0.1),
+      transparent 55%
+    ),
+    #16161c;
+  color: #e7e7ee;
+  font-feature-settings: "ss01", "cv01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* faint grain overlay for atmosphere */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2d2d38;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .tt-card {
+    @apply rounded-2xl border border-ink-600/70 bg-ink-800/80 shadow-panel backdrop-blur-sm;
+  }
+  .tt-input {
+    @apply rounded-lg border border-ink-600 bg-ink-700/70 px-3 py-2 text-sm text-mist-100 outline-none transition placeholder:text-mist-400 focus:border-magenta/70 focus:shadow-glow;
+  }
+  .tt-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition active:scale-[.98];
+  }
+  .tt-btn-primary {
+    @apply tt-btn bg-magenta text-ink-950 hover:bg-magenta-bright;
+  }
+  .tt-btn-ghost {
+    @apply tt-btn border border-ink-600 text-mist-300 hover:text-mist-100 hover:border-ink-500;
+  }
+  .tt-chip {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}

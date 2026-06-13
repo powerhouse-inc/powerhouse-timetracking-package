@@ -14,6 +14,7 @@ const ignoredFiles = [
   "**/.ph/",
   "**/storybook-static/",
   "**/.vite/",
+  "app/",
 ];
 
 /** Global configs for eslint ignores */
