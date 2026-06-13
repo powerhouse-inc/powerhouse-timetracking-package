@@ -1,0 +1,163 @@
+"use client";
+
+import { useCallback, useEffect, useRef } from "react";
+import type { RawEntry, RawRunning } from "@/lib/api";
+import type { WorkspaceProject } from "@/lib/types";
+import type { EntryBlockAction } from "./calendar-block.js";
+import { CalendarBlock } from "./calendar-block.js";
+import { NowIndicator } from "./now-indicator.js";
+import { TimeAxis } from "./time-axis.js";
+import {
+  HOUR_HEIGHT,
+  SNAP_MINUTES,
+  DEFAULT_WORK_START,
+  hourMinuteToY,
+  localDayKey,
+  yToTime,
+} from "@/lib/calendar/time.js";
+import type { CalendarViewProps } from "./types.js";
+
+export function DayView({
+  entries,
+  running,
+  projects,
+  currentDate,
+  dragState,
+  now,
+  onDragStart,
+  onDragEnd,
+  onBlockAction,
+  onClick,
+}: CalendarViewProps) {
+  const dayKey = localDayKey(currentDate.toISOString());
+  const dayEntries = entries.filter((e) => localDayKey(e.start) === dayKey);
+  const isToday = currentDate.toDateString() === new Date().toDateString();
+
+  const totalHours = 24;
+  const gridHeight = totalHours * HOUR_HEIGHT;
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to working hours on mount
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = hourMinuteToY(DEFAULT_WORK_START, 0);
+    }
+  }, []);
+
+  // Click on blank slot to create
+  const handleGridClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const el = e.currentTarget;
+      const rect = el.getBoundingClientRect();
+      const y = e.clientY - rect.top + el.scrollTop;
+
+      // Only trigger if clicking on the grid area (not on a block)
+      if ((e.target as HTMLElement).closest(".tt-cal-block")) return;
+
+      const snappedY = Math.round(y / (SNAP_MINUTES / 60 * HOUR_HEIGHT)) * (SNAP_MINUTES / 60 * HOUR_HEIGHT);
+      const startISO = yToTime(snappedY, currentDate);
+      const endISO = yToTime(snappedY + HOUR_HEIGHT / 2, currentDate); // 30-min default
+
+      onDragStart({
+        type: "create",
+        startDate: new Date(startISO),
+        startPixel: snappedY,
+        endPixel: snappedY + HOUR_HEIGHT / 2,
+      });
+    },
+    [currentDate, onDragStart],
+  );
+
+  return (
+    <div className="relative">
+      {/* Header: day name */}
+      <div
+        className="flex items-center border-b border-ink-600/60 px-4 py-2"
+        style={{ height: 36 }}
+      >
+        <div className="flex-1 text-xs font-semibold">
+          {currentDate.toLocaleDateString([], {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+          })}
+          {isToday && (
+            <span className="ml-2 rounded-full bg-magenta/20 px-2 py-px text-[10px] font-bold text-magenta">
+              Today
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div
+        ref={scrollRef}
+        className="relative"
+        style={{ height: gridHeight, overflowY: "auto" }}
+        onClick={handleGridClick}
+      >
+        {/* Hour gridlines */}
+        {Array.from({ length: totalHours }, (_, i) => (
+          <div
+            key={i}
+            className="absolute inset-x-0 border-b border-ink-600/20"
+            style={{ top: i * HOUR_HEIGHT }}
+          />
+        ))}
+
+        {/* Half-hour dashed lines */}
+        {Array.from({ length: totalHours * 2 }, (_, i) => {
+          if (i % 2 === 0) return null;
+          return (
+            <div
+              key={i}
+              className="absolute inset-x-0 border-b border-dashed border-ink-600/10"
+              style={{ top: i * HOUR_HEIGHT / 2 }}
+            />
+          );
+        })}
+
+        {/* Time axis */}
+        <TimeAxis height={gridHeight} />
+
+        {/* Time entries */}
+        {dayEntries.map((e) => (
+          <CalendarBlock
+            key={e.id}
+            entry={e}
+            running={running}
+            projects={projects}
+            dragState={dragState}
+            onAction={onBlockAction}
+            onClick={onClick}
+          />
+        ))}
+
+        {/* Running timer entry (if on different day) */}
+        {running &&
+          localDayKey(running.start) !== dayKey && (
+            <CalendarBlock
+              key={`run-${running.id}`}
+              entry={{
+                id: running.id,
+                description: running.description || "(no description)",
+                projectId: running.projectId,
+                start: running.start,
+                end: new Date().toISOString(),
+                billable: running.billable,
+                tags: [],
+              }}
+              running={running}
+              projects={projects}
+              dragState={dragState}
+              onAction={onBlockAction}
+              onClick={onClick}
+            />
+          )}
+
+        {/* Now indicator */}
+        {isToday && <NowIndicator nowMs={now} />}
+      </div>
+    </div>
+  );
+}

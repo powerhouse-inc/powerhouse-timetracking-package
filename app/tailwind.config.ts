@@ -46,10 +46,15 @@ export default {
           "0%": { boxShadow: "0 0 0 0 rgba(255,94,199,.5)" },
           "100%": { boxShadow: "0 0 0 12px rgba(255,94,199,0)" },
         },
+        "pulse-line": {
+          "0%, 100%": { opacity: "0.5" },
+          "50%": { opacity: "1" },
+        },
       },
       animation: {
         "fade-up": "fade-up .4s cubic-bezier(.2,.7,.2,1) both",
         "pulse-ring": "pulse-ring 1.6s ease-out infinite",
+        "pulse-line": "pulse-line 2s ease-in-out infinite",
       },
     },
   },
