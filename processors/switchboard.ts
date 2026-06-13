@@ -3,5 +3,8 @@
  * This file is auto-generated and updated by codegen
  */
 import type { ProcessorFactoryBuilder } from "@powerhousedao/reactor";
+import { timetrackingReadFactoryBuilder } from "processors/timetracking-read";
 
-export const processorFactoryBuilders: ProcessorFactoryBuilder[] = [];
+export const processorFactoryBuilders: ProcessorFactoryBuilder[] = [
+  timetrackingReadFactoryBuilder,
+];

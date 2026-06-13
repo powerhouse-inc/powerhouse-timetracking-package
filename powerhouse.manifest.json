@@ -18,7 +18,17 @@
   ],
   "apps": [],
   "editors": [],
-  "processors": [],
-  "subgraphs": [],
+  "processors": [
+    {
+      "id": "timetracking-read",
+      "name": "timetracking-read"
+    }
+  ],
+  "subgraphs": [
+    {
+      "name": "timetracking-read",
+      "id": "timetracking-read"
+    }
+  ],
   "config": []
 }
