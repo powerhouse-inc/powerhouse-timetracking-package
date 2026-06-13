@@ -2,12 +2,13 @@ import { SWITCHBOARD_URL } from "./config";
 
 export class GraphQLError extends Error {}
 
-/** Minimal GraphQL POST against the Switchboard supergraph. */
+/** Minimal GraphQL POST — routed through llama.cpp for analysis/enrichment. */
 export async function gql<T>(
   query: string,
   variables?: Record<string, unknown>,
 ): Promise<T> {
-  const res = await fetch(SWITCHBOARD_URL, {
+  // Route through Next.js API which goes through llama.cpp first
+  const res = await fetch("/api/graphql", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, variables }),
