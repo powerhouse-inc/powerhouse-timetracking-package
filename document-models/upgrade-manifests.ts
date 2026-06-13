@@ -4,7 +4,9 @@
  */
 import type { UpgradeManifest } from "document-model";
 import { timesheetUpgradeManifest } from "document-models/timesheet/upgrades";
+import { timetrackingWorkspaceUpgradeManifest } from "document-models/timetracking-workspace/upgrades";
 
 export const upgradeManifests: UpgradeManifest<readonly number[]>[] = [
   timesheetUpgradeManifest,
+  timetrackingWorkspaceUpgradeManifest,
 ];

@@ -1,0 +1,136 @@
+scalar Unknown
+scalar DateTime
+scalar Address
+scalar AttachmentRef
+scalar Amount_Tokens
+scalar EthereumAddress
+scalar EmailAddress
+scalar Amount_Percentage
+scalar Date
+scalar URL
+scalar Amount_Money
+scalar OLabel
+scalar Currency
+scalar PHID
+scalar OID
+scalar Amount_Fiat
+scalar Amount_Currency
+scalar Amount_Crypto
+scalar Amount
+scalar Upload
+
+type TimetrackingWorkspaceState {
+  name: String!
+  members: [Member!]!
+  clients: [Client!]!
+  projects: [Project!]!
+}
+
+type Member {
+  id: OID!
+  address: String
+  did: String
+  name: String!
+  avatarUrl: URL
+  role: MemberRole!
+  status: MemberStatus!
+}
+
+type Client {
+  id: OID!
+  name: String!
+  status: EntityStatus!
+}
+
+type Project {
+  id: OID!
+  name: String!
+  clientId: OID
+  color: String!
+  billable: Boolean!
+  hourlyRate: Amount_Money
+  status: EntityStatus!
+}
+
+enum MemberRole {
+  ADMIN
+  MANAGER
+  MEMBER
+  BILLING
+}
+
+enum MemberStatus {
+  ACTIVE
+  INVITED
+  ARCHIVED
+}
+
+enum EntityStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+# management
+
+input SetWorkspaceNameInput {
+  name: String!
+}
+
+input AddMemberInput {
+  id: OID!
+  address: String
+  did: String
+  name: String!
+  avatarUrl: URL
+  role: MemberRole!
+}
+
+input UpdateMemberInput {
+  id: OID!
+  name: String
+  avatarUrl: URL
+  status: MemberStatus
+}
+
+input SetMemberRoleInput {
+  id: OID!
+  role: MemberRole!
+}
+
+input ArchiveMemberInput {
+  id: OID!
+}
+
+input AddClientInput {
+  id: OID!
+  name: String!
+}
+
+input UpdateClientInput {
+  id: OID!
+  name: String
+}
+
+input ArchiveClientInput {
+  id: OID!
+}
+
+input AddProjectInput {
+  id: OID!
+  name: String!
+  clientId: OID
+  color: String!
+  billable: Boolean!
+}
+
+input UpdateProjectInput {
+  id: OID!
+  name: String
+  clientId: OID
+  color: String
+  billable: Boolean
+}
+
+input ArchiveProjectInput {
+  id: OID!
+}

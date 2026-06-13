@@ -10,6 +10,10 @@
     {
       "id": "powerhouse/timesheet",
       "name": "Timesheet"
+    },
+    {
+      "id": "powerhouse/timetracking-workspace",
+      "name": "TimetrackingWorkspace"
     }
   ],
   "apps": [],

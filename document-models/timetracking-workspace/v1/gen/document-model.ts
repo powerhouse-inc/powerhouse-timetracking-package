@@ -1,0 +1,266 @@
+import type { DocumentModelGlobalState } from "document-model";
+
+export const documentModel: DocumentModelGlobalState = {
+  id: "powerhouse/timetracking-workspace",
+  name: "TimetrackingWorkspace",
+  author: {
+    name: "Powerhouse",
+    website: "https://www.powerhouse.inc/",
+  },
+  extension: "phtw",
+  description:
+    "Members, clients, and projects with role-based access for time tracking.",
+  specifications: [
+    {
+      state: {
+        local: {
+          schema: "",
+          examples: [],
+          initialValue: "",
+        },
+        global: {
+          schema:
+            "type TimetrackingWorkspaceState {\n  name: String!\n  members: [Member!]!\n  clients: [Client!]!\n  projects: [Project!]!\n}\n\ntype Member {\n  id: OID!\n  address: String\n  did: String\n  name: String!\n  avatarUrl: URL\n  role: MemberRole!\n  status: MemberStatus!\n}\n\ntype Client {\n  id: OID!\n  name: String!\n  status: EntityStatus!\n}\n\ntype Project {\n  id: OID!\n  name: String!\n  clientId: OID\n  color: String!\n  billable: Boolean!\n  hourlyRate: Amount_Money\n  status: EntityStatus!\n}\n\nenum MemberRole {\n  ADMIN\n  MANAGER\n  MEMBER\n  BILLING\n}\n\nenum MemberStatus {\n  ACTIVE\n  INVITED\n  ARCHIVED\n}\n\nenum EntityStatus {\n  ACTIVE\n  ARCHIVED\n}",
+          examples: [],
+          initialValue: '{"name":"","members":[],"clients":[],"projects":[]}',
+        },
+      },
+      modules: [
+        {
+          id: "management",
+          name: "management",
+          description: "Manage members, clients, and projects.",
+          operations: [
+            {
+              id: "op-set-workspace-name",
+              name: "SET_WORKSPACE_NAME",
+              description: "",
+              schema: "input SetWorkspaceNameInput {\n  name: String!\n}",
+              template: "",
+              reducer: "state.name = action.input.name;",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-add-member",
+              name: "ADD_MEMBER",
+              description: "",
+              schema:
+                "input AddMemberInput {\n  id: OID!\n  address: String\n  did: String\n  name: String!\n  avatarUrl: URL\n  role: MemberRole!\n}",
+              template: "",
+              reducer:
+                'if (state.members.some((m) => m.id === action.input.id || (action.input.address && m.address === action.input.address))) {\n  throw new DuplicateMemberError("Member id or address already exists");\n}\nstate.members.push({\n  id: action.input.id,\n  address: action.input.address ?? null,\n  did: action.input.did ?? null,\n  name: action.input.name,\n  avatarUrl: action.input.avatarUrl ?? null,\n  role: action.input.role,\n  status: "INVITED",\n});',
+              errors: [
+                {
+                  id: "err-dup-member",
+                  name: "DuplicateMemberError",
+                  code: "DUPLICATE_MEMBER",
+                  description:
+                    "A member with this id or address already exists.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-update-member",
+              name: "UPDATE_MEMBER",
+              description: "",
+              schema:
+                "input UpdateMemberInput {\n  id: OID!\n  name: String\n  avatarUrl: URL\n  status: MemberStatus\n}",
+              template: "",
+              reducer:
+                'const member = state.members.find((m) => m.id === action.input.id);\nif (!member) throw new MemberNotFoundError("Member not found");\nif (action.input.name) member.name = action.input.name;\nif (action.input.avatarUrl) member.avatarUrl = action.input.avatarUrl;\nif (action.input.status) member.status = action.input.status;',
+              errors: [
+                {
+                  id: "err-member-not-found-update",
+                  name: "MemberNotFoundError",
+                  code: "MEMBER_NOT_FOUND",
+                  description: "No member with this id exists.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-set-member-role",
+              name: "SET_MEMBER_ROLE",
+              description: "",
+              schema:
+                "input SetMemberRoleInput {\n  id: OID!\n  role: MemberRole!\n}",
+              template: "",
+              reducer:
+                'const member = state.members.find((m) => m.id === action.input.id);\nif (!member) throw new MemberNotFoundError("Member not found");\nmember.role = action.input.role;',
+              errors: [
+                {
+                  id: "err-member-not-found-role",
+                  name: "MemberNotFoundError",
+                  code: "MEMBER_NOT_FOUND",
+                  description: "No member with this id exists.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-archive-member",
+              name: "ARCHIVE_MEMBER",
+              description: "",
+              schema: "input ArchiveMemberInput {\n  id: OID!\n}",
+              template: "",
+              reducer:
+                'const member = state.members.find((m) => m.id === action.input.id);\nif (!member) throw new MemberNotFoundError("Member not found");\nmember.status = "ARCHIVED";',
+              errors: [
+                {
+                  id: "err-member-not-found-archive",
+                  name: "MemberNotFoundError",
+                  code: "MEMBER_NOT_FOUND",
+                  description: "No member with this id exists.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-add-client",
+              name: "ADD_CLIENT",
+              description: "",
+              schema: "input AddClientInput {\n  id: OID!\n  name: String!\n}",
+              template: "",
+              reducer:
+                'if (state.clients.some((c) => c.id === action.input.id)) {\n  throw new DuplicateClientError("Client id already exists");\n}\nstate.clients.push({ id: action.input.id, name: action.input.name, status: "ACTIVE" });',
+              errors: [
+                {
+                  id: "err-dup-client",
+                  name: "DuplicateClientError",
+                  code: "DUPLICATE_CLIENT",
+                  description: "A client with this id already exists.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-update-client",
+              name: "UPDATE_CLIENT",
+              description: "",
+              schema:
+                "input UpdateClientInput {\n  id: OID!\n  name: String\n}",
+              template: "",
+              reducer:
+                'const client = state.clients.find((c) => c.id === action.input.id);\nif (!client) throw new ClientNotFoundError("Client not found");\nif (action.input.name) client.name = action.input.name;',
+              errors: [
+                {
+                  id: "err-client-not-found-update",
+                  name: "ClientNotFoundError",
+                  code: "CLIENT_NOT_FOUND",
+                  description: "No client with this id exists.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-archive-client",
+              name: "ARCHIVE_CLIENT",
+              description: "",
+              schema: "input ArchiveClientInput {\n  id: OID!\n}",
+              template: "",
+              reducer:
+                'const client = state.clients.find((c) => c.id === action.input.id);\nif (!client) throw new ClientNotFoundError("Client not found");\nclient.status = "ARCHIVED";',
+              errors: [
+                {
+                  id: "err-client-not-found-archive",
+                  name: "ClientNotFoundError",
+                  code: "CLIENT_NOT_FOUND",
+                  description: "No client with this id exists.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-add-project",
+              name: "ADD_PROJECT",
+              description: "",
+              schema:
+                "input AddProjectInput {\n  id: OID!\n  name: String!\n  clientId: OID\n  color: String!\n  billable: Boolean!\n}",
+              template: "",
+              reducer:
+                'if (state.projects.some((p) => p.id === action.input.id)) {\n  throw new DuplicateProjectError("Project id already exists");\n}\nif (action.input.clientId && !state.clients.some((c) => c.id === action.input.clientId)) {\n  throw new ClientNotFoundError("Client not found");\n}\nstate.projects.push({\n  id: action.input.id,\n  name: action.input.name,\n  clientId: action.input.clientId ?? null,\n  color: action.input.color,\n  billable: action.input.billable,\n  hourlyRate: null,\n  status: "ACTIVE",\n});',
+              errors: [
+                {
+                  id: "err-dup-project",
+                  name: "DuplicateProjectError",
+                  code: "DUPLICATE_PROJECT",
+                  description: "A project with this id already exists.",
+                  template: "",
+                },
+                {
+                  id: "err-client-not-found-addproject",
+                  name: "ClientNotFoundError",
+                  code: "CLIENT_NOT_FOUND",
+                  description: "The referenced client does not exist.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-update-project",
+              name: "UPDATE_PROJECT",
+              description: "",
+              schema:
+                "input UpdateProjectInput {\n  id: OID!\n  name: String\n  clientId: OID\n  color: String\n  billable: Boolean\n}",
+              template: "",
+              reducer:
+                'const project = state.projects.find((p) => p.id === action.input.id);\nif (!project) throw new ProjectNotFoundError("Project not found");\nif (action.input.name) project.name = action.input.name;\nif (action.input.clientId) project.clientId = action.input.clientId;\nif (action.input.color) project.color = action.input.color;\nif (action.input.billable !== undefined && action.input.billable !== null) project.billable = action.input.billable;',
+              errors: [
+                {
+                  id: "err-project-not-found-update",
+                  name: "ProjectNotFoundError",
+                  code: "PROJECT_NOT_FOUND",
+                  description: "No project with this id exists.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-archive-project",
+              name: "ARCHIVE_PROJECT",
+              description: "",
+              schema: "input ArchiveProjectInput {\n  id: OID!\n}",
+              template: "",
+              reducer:
+                'const project = state.projects.find((p) => p.id === action.input.id);\nif (!project) throw new ProjectNotFoundError("Project not found");\nproject.status = "ARCHIVED";',
+              errors: [
+                {
+                  id: "err-project-not-found-archive",
+                  name: "ProjectNotFoundError",
+                  code: "PROJECT_NOT_FOUND",
+                  description: "No project with this id exists.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+          ],
+        },
+      ],
+      version: 1,
+      changeLog: [],
+    },
+  ],
+};
