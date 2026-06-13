@@ -39,7 +39,10 @@ export class TimetrackingRead extends RelationalDbProcessor<DB> {
   }
 
   static override getNamespace(driveId: string): string {
-    return super.getNamespace(driveId);
+    // Suffix bumps the schema version: changing it forces a fresh, complete
+    // re-index from the beginning of history (used when the projection shape
+    // changes).
+    return `${super.getNamespace(driveId)}_v1`;
   }
 
   override async initAndUpgrade(): Promise<void> {

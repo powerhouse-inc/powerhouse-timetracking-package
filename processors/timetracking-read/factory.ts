@@ -36,6 +36,8 @@ export const timetrackingReadFactoryBuilder: ProcessorFactoryBuilder =
       store,
       driveHeader.id,
     );
+    // Create the relational tables before the reactor starts feeding operations.
+    await processor.initAndUpgrade();
     return [
       {
         processor,
