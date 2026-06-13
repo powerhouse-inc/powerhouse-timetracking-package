@@ -3,8 +3,8 @@
 import { useCallback } from "react";
 import type { RawEntry, RawRunning } from "@/lib/api";
 import type { WorkspaceProject } from "@/lib/types";
-import type { EntryBlockAction } from "./calendar-block.js";
-import { CalendarBlock } from "./calendar-block.js";
+import type { EntryBlockAction } from "./calendar-block"
+import { CalendarBlock } from "./calendar-block"
 import {
   getMonthGrid,
   dayAbbrev,
@@ -14,8 +14,8 @@ import {
   durationSeconds,
   formatDurationShort,
   formatTime24,
-} from "@/lib/calendar/time.js";
-import type { CalendarViewProps } from "./types.js";
+} from "@/lib/calendar/time"
+import type { CalendarViewProps } from "./types"
 
 /* ------------------------------------------------------------------ */
 /*  Month view                                                         */

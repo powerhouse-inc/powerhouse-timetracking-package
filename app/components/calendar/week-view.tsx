@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { RawEntry, RawRunning } from "@/lib/api";
 import type { WorkspaceProject } from "@/lib/types";
-import type { EntryBlockAction } from "./calendar-block.js";
-import { CalendarBlock } from "./calendar-block.js";
-import { NowIndicator } from "./now-indicator.js";
-import { TimeAxis } from "./time-axis.js";
+import type { EntryBlockAction } from "./calendar-block"
+import { CalendarBlock } from "./calendar-block"
+import { NowIndicator } from "./now-indicator"
+import { TimeAxis } from "./time-axis"
 import {
   HOUR_HEIGHT,
   SNAP_MINUTES,
@@ -17,8 +17,8 @@ import {
   getWeekRange,
   dayAbbrev,
   dayIsToday,
-} from "@/lib/calendar/time.js";
-import type { CalendarViewProps } from "./types.js";
+} from "@/lib/calendar/time"
+import type { CalendarViewProps } from "./types"
 
 export function WeekView({
   entries,

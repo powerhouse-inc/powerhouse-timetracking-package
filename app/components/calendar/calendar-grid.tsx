@@ -3,18 +3,18 @@
 import { useCallback, useEffect, useState } from "react";
 import type { RawEntry, RawRunning } from "@/lib/api";
 import type { WorkspaceProject } from "@/lib/types";
-import type { EntryBlockAction } from "./calendar-block.js";
-import { CalendarNav } from "./calendar-nav.js";
-import { DayView } from "./day-view.js";
-import { MonthView } from "./month-view.js";
-import { WeekView } from "./week-view.js";
-import { addDays } from "@/lib/calendar/time.js";
-import type { CalendarDragState, CalendarViewProps } from "./types.js";
+import type { EntryBlockAction } from "./calendar-block"
+import { CalendarNav } from "./calendar-nav"
+import { DayView } from "./day-view"
+import { MonthView } from "./month-view"
+import { WeekView } from "./week-view"
+import { addDays } from "@/lib/calendar/time"
+import type { CalendarDragState, CalendarViewProps } from "./types"
 
 export type ViewType = "day" | "week" | "month";
 
 // Re-export for consumers
-export type { CalendarDragState } from "./types.js";
+export type { CalendarDragState } from "./types"
 
 /* ------------------------------------------------------------------ */
 /*  Main calendar grid (view switching + drag state)                   */

@@ -10,7 +10,7 @@ import {
   formatDurationShort,
   formatTime24,
   timeToY,
-} from "@/lib/calendar/time.js";
+} from "@/lib/calendar/time"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
