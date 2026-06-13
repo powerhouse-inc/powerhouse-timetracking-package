@@ -1,0 +1,198 @@
+import type { DocumentModelGlobalState } from "document-model";
+
+export const documentModel: DocumentModelGlobalState = {
+  id: "powerhouse/timesheet",
+  name: "Timesheet",
+  author: {
+    name: "Powerhouse",
+    website: "https://www.powerhouse.inc/",
+  },
+  extension: "phts",
+  description: "A single member's time entries and live running timer.",
+  specifications: [
+    {
+      state: {
+        local: {
+          schema: "",
+          examples: [],
+          initialValue: "",
+        },
+        global: {
+          schema:
+            "type TimesheetState {\n  ownerAddress: String\n  entries: [TimeEntry!]!\n  running: RunningEntry\n}\n\ntype TimeEntry {\n  id: OID!\n  description: String!\n  projectId: OID\n  start: DateTime!\n  end: DateTime!\n  billable: Boolean!\n  tags: [String!]!\n}\n\ntype RunningEntry {\n  id: OID!\n  description: String!\n  projectId: OID\n  start: DateTime!\n  billable: Boolean!\n  tags: [String!]!\n}",
+          examples: [],
+          initialValue: '{"ownerAddress":null,"entries":[],"running":null}',
+        },
+      },
+      modules: [
+        {
+          id: "tracking",
+          name: "tracking",
+          description: "Time entry tracking and the live timer.",
+          operations: [
+            {
+              id: "op-set-owner",
+              name: "SET_OWNER",
+              description: "",
+              schema: "input SetOwnerInput {\n  ownerAddress: String!\n}",
+              template: "",
+              reducer: "state.ownerAddress = action.input.ownerAddress;",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-start-timer",
+              name: "START_TIMER",
+              description: "",
+              schema:
+                "input StartTimerInput {\n  id: OID!\n  description: String!\n  projectId: OID\n  start: DateTime!\n  billable: Boolean!\n  tags: [String!]!\n}",
+              template: "",
+              reducer:
+                'if (state.running) {\n  throw new TimerAlreadyRunningError("A timer is already running");\n}\nstate.running = {\n  id: action.input.id,\n  description: action.input.description,\n  projectId: action.input.projectId ?? null,\n  start: action.input.start,\n  billable: action.input.billable,\n  tags: action.input.tags,\n};',
+              errors: [
+                {
+                  id: "err-timer-already-running",
+                  name: "TimerAlreadyRunningError",
+                  code: "TIMER_ALREADY_RUNNING",
+                  description: "A timer is already running for this timesheet.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-stop-timer",
+              name: "STOP_TIMER",
+              description: "",
+              schema: "input StopTimerInput {\n  end: DateTime!\n}",
+              template: "",
+              reducer:
+                'if (!state.running) {\n  throw new NoRunningTimerError("No timer is running");\n}\nif (new Date(action.input.end).getTime() < new Date(state.running.start).getTime()) {\n  throw new InvalidTimeRangeError("End must be after start");\n}\nstate.entries.push({\n  id: state.running.id,\n  description: state.running.description,\n  projectId: state.running.projectId ?? null,\n  start: state.running.start,\n  end: action.input.end,\n  billable: state.running.billable,\n  tags: state.running.tags,\n});\nstate.running = null;',
+              errors: [
+                {
+                  id: "err-no-running-timer-stop",
+                  name: "NoRunningTimerError",
+                  code: "NO_RUNNING_TIMER",
+                  description: "There is no running timer to stop.",
+                  template: "",
+                },
+                {
+                  id: "err-invalid-range-stop",
+                  name: "InvalidTimeRangeError",
+                  code: "INVALID_TIME_RANGE",
+                  description:
+                    "The end time must not be before the start time.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-discard-timer",
+              name: "DISCARD_TIMER",
+              description: "",
+              schema: "input DiscardTimerInput {\n  _: Boolean\n}",
+              template: "",
+              reducer:
+                'if (!state.running) {\n  throw new NoRunningTimerError("No timer is running");\n}\nstate.running = null;',
+              errors: [
+                {
+                  id: "err-no-running-timer-discard",
+                  name: "NoRunningTimerError",
+                  code: "NO_RUNNING_TIMER",
+                  description: "There is no running timer to discard.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-add-entry",
+              name: "ADD_ENTRY",
+              description: "",
+              schema:
+                "input AddEntryInput {\n  id: OID!\n  description: String!\n  projectId: OID\n  start: DateTime!\n  end: DateTime!\n  billable: Boolean!\n  tags: [String!]!\n}",
+              template: "",
+              reducer:
+                'if (state.entries.some((e) => e.id === action.input.id)) {\n  throw new DuplicateEntryIdError("Entry id already exists");\n}\nif (new Date(action.input.end).getTime() < new Date(action.input.start).getTime()) {\n  throw new InvalidTimeRangeError("End must be after start");\n}\nstate.entries.push({\n  id: action.input.id,\n  description: action.input.description,\n  projectId: action.input.projectId ?? null,\n  start: action.input.start,\n  end: action.input.end,\n  billable: action.input.billable,\n  tags: action.input.tags,\n});',
+              errors: [
+                {
+                  id: "err-duplicate-entry",
+                  name: "DuplicateEntryIdError",
+                  code: "DUPLICATE_ENTRY_ID",
+                  description: "An entry with this id already exists.",
+                  template: "",
+                },
+                {
+                  id: "err-invalid-range-add",
+                  name: "InvalidTimeRangeError",
+                  code: "INVALID_TIME_RANGE",
+                  description:
+                    "The end time must not be before the start time.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-update-entry",
+              name: "UPDATE_ENTRY",
+              description: "",
+              schema:
+                "input UpdateEntryInput {\n  id: OID!\n  description: String\n  projectId: OID\n  start: DateTime\n  end: DateTime\n  billable: Boolean\n  tags: [String!]\n}",
+              template: "",
+              reducer:
+                'const entry = state.entries.find((e) => e.id === action.input.id);\nif (!entry) {\n  throw new EntryNotFoundError("Entry not found");\n}\nconst nextStart = action.input.start ?? entry.start;\nconst nextEnd = action.input.end ?? entry.end;\nif (new Date(nextEnd).getTime() < new Date(nextStart).getTime()) {\n  throw new InvalidTimeRangeError("End must be after start");\n}\nif (action.input.description) entry.description = action.input.description;\nif (action.input.projectId !== undefined && action.input.projectId !== null) entry.projectId = action.input.projectId;\nif (action.input.start) entry.start = action.input.start;\nif (action.input.end) entry.end = action.input.end;\nif (action.input.billable !== undefined && action.input.billable !== null) entry.billable = action.input.billable;\nif (action.input.tags) entry.tags = action.input.tags;',
+              errors: [
+                {
+                  id: "err-entry-not-found-update",
+                  name: "EntryNotFoundError",
+                  code: "ENTRY_NOT_FOUND",
+                  description: "No entry with this id exists.",
+                  template: "",
+                },
+                {
+                  id: "err-invalid-range-update",
+                  name: "InvalidTimeRangeError",
+                  code: "INVALID_TIME_RANGE",
+                  description:
+                    "The end time must not be before the start time.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-delete-entry",
+              name: "DELETE_ENTRY",
+              description: "",
+              schema: "input DeleteEntryInput {\n  id: OID!\n}",
+              template: "",
+              reducer:
+                'const index = state.entries.findIndex((e) => e.id === action.input.id);\nif (index === -1) {\n  throw new EntryNotFoundError("Entry not found");\n}\nstate.entries.splice(index, 1);',
+              errors: [
+                {
+                  id: "err-entry-not-found-delete",
+                  name: "EntryNotFoundError",
+                  code: "ENTRY_NOT_FOUND",
+                  description: "No entry with this id exists.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+          ],
+        },
+      ],
+      version: 1,
+      changeLog: [],
+    },
+  ],
+};
