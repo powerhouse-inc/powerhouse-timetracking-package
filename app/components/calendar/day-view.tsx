@@ -70,8 +70,8 @@ export function DayView({
     <div className="relative w-full">
       <div
         ref={scrollRef}
-        className="relative flex flex-col"
-        style={{ height: gridHeight, overflowY: "auto" }}
+        className="relative flex flex-col h-[calc(100vh-8rem)]"
+        style={{ overflowY: "auto" }}
       >
         {/* Header: day name (sticky inside scroll container) */}
         <div
@@ -93,7 +93,7 @@ export function DayView({
         </div>
 
         {/* Day grid */}
-        <div className="relative w-full" onClick={handleGridClick}>
+        <div className="relative w-full" style={{ height: gridHeight }} onClick={handleGridClick}>
           {/* Hour gridlines */}
           {Array.from({ length: totalHours }, (_, i) => (
             <div

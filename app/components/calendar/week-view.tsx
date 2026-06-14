@@ -72,8 +72,8 @@ export function WeekView({
       {/* Grid: header + scrollable day columns */}
       <div
         ref={scrollRef}
-        className="relative flex flex-col"
-        style={{ height: gridHeight, overflowY: "auto" }}
+        className="relative flex flex-col h-[calc(100vh-8rem)]"
+        style={{ overflowY: "auto" }}
       >
         {/* Header: day names (sticky inside scroll container) */}
         <div
@@ -102,7 +102,7 @@ export function WeekView({
         </div>
 
         {/* Day columns grid */}
-        <div className="relative flex">
+        <div className="relative flex" style={{ height: gridHeight }}>
           {/* Time axis */}
           <TimeAxis height={gridHeight} />
 
