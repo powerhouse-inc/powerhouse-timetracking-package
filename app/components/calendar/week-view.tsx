@@ -46,6 +46,7 @@ export function WeekView({
   // Click on blank slot to create a time entry
   const handleGridClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>, dayIndex: number) => {
+      console.log("[week-view] handleGridClick dayIndex=", dayIndex);
       const el = e.currentTarget;
       const rect = el.getBoundingClientRect();
       const y = e.clientY - rect.top + el.scrollTop;

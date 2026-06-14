@@ -129,6 +129,7 @@ export default function CalendarPage() {
 
   // Drag handlers
   const handleDragStart = useCallback((state: CalendarDragState) => {
+    console.log("[page] handleDragStart:", state.type, state);
     setDragState(state);
     if (state.type === "create") {
       // Use the already-computed dates from the view component
@@ -251,10 +252,6 @@ export default function CalendarPage() {
 
   // Grid container ref for popover positioning (must be before early return)
   const gridContainerRef = useRef<HTMLDivElement>(null);
-  const [gridOffset, setGridOffset] = useState<number | null>(null);
-  useEffect(() => {
-    setGridOffset(gridContainerRef.current?.getBoundingClientRect().top ?? null);
-  }, []);
 
   // Loading state
   if (!docId || busy) {
@@ -317,7 +314,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Create popover */}
-      {createPopover && gridOffset !== null && (
+      {createPopover && gridContainerRef.current && (
         <div
           className="fixed inset-0 z-30"
           onClick={() => setCreatePopover(null)}
@@ -325,7 +322,7 @@ export default function CalendarPage() {
           <div
             className="fixed z-40 w-72"
             style={{
-              top: gridOffset + createPopover.clickTop - 80,
+              top: gridContainerRef.current.getBoundingClientRect().top + createPopover.clickTop - 80,
               left: createPopover.clickLeft + 16,
             }}
             onClick={(e) => e.stopPropagation()}
