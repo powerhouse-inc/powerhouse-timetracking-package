@@ -69,43 +69,45 @@ export function WeekView({
 
   return (
     <div className="relative w-full">
-      {/* Header: day names */}
-      <div
-        className="flex sticky top-0 z-20 border-b border-ink-600/60 bg-ink-800"
-        style={{ height: 36 }}
-      >
-        <div className="flex-none border-r border-ink-600/40" style={{ width: 56 }} />
-        {weekDays.map((d, i) => {
-          const today = dayIsToday(d);
-          return (
-            <div
-              key={i}
-              className={`flex-1 text-center text-xs font-semibold ${
-                today ? "text-magenta" : "text-mist-400"
-              }`}
-            >
-              <div>{dayAbbrev(d)}</div>
-              <div className={`mt-0.5 inline-block rounded-full text-[11px] ${
-                today ? "bg-magenta/20" : ""
-              }`}>
-                {d.getDate()}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Grid */}
+      {/* Grid: header + scrollable day columns */}
       <div
         ref={scrollRef}
-        className="relative flex"
+        className="relative flex flex-col"
         style={{ height: gridHeight, overflowY: "auto" }}
       >
-        {/* Time axis */}
-        <TimeAxis height={gridHeight} />
+        {/* Header: day names (sticky inside scroll container) */}
+        <div
+          className="sticky top-0 z-20 flex flex-none border-b border-ink-600/60 bg-ink-800"
+          style={{ height: 36 }}
+        >
+          <div className="flex-none border-r border-ink-600/40" style={{ width: 56 }} />
+          {weekDays.map((d, i) => {
+            const today = dayIsToday(d);
+            return (
+              <div
+                key={i}
+                className={`flex-1 text-center text-xs font-semibold ${
+                  today ? "text-magenta" : "text-mist-400"
+                }`}
+              >
+                <div>{dayAbbrev(d)}</div>
+                <div className={`mt-0.5 inline-block rounded-full text-[11px] ${
+                  today ? "bg-magenta/20" : ""
+                }`}>
+                  {d.getDate()}
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
-        {/* 7 day columns */}
-        {weekDays.map((dayDate, dayIndex) => {
+        {/* Day columns grid */}
+        <div className="relative flex">
+          {/* Time axis */}
+          <TimeAxis height={gridHeight} />
+
+          {/* 7 day columns */}
+          {weekDays.map((dayDate, dayIndex) => {
           const dk = localDayKey(dayDate.toISOString());
           const today = dayIsToday(dayDate);
           const dayEntries = entries.filter(
@@ -185,6 +187,7 @@ export function WeekView({
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );

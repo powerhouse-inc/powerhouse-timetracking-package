@@ -68,93 +68,94 @@ export function DayView({
 
   return (
     <div className="relative w-full">
-      {/* Header: day name */}
-      <div
-        className="flex items-center border-b border-ink-600/60 px-4 py-2"
-        style={{ height: 36 }}
-      >
-        <div className="flex-1 text-xs font-semibold">
-          {currentDate.toLocaleDateString([], {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })}
-          {isToday && (
-            <span className="ml-2 rounded-full bg-magenta/20 px-2 py-px text-[10px] font-bold text-magenta">
-              Today
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Grid */}
       <div
         ref={scrollRef}
-        className="relative"
+        className="relative flex flex-col"
         style={{ height: gridHeight, overflowY: "auto" }}
-        onClick={handleGridClick}
       >
-        {/* Hour gridlines */}
-        {Array.from({ length: totalHours }, (_, i) => (
-          <div
-            key={i}
-            className="absolute inset-x-0 border-b border-ink-600/20"
-            style={{ top: i * HOUR_HEIGHT }}
-          />
-        ))}
+        {/* Header: day name (sticky inside scroll container) */}
+        <div
+          className="sticky top-0 z-20 flex items-center border-b border-ink-600/60 px-4 py-2 bg-ink-800"
+          style={{ height: 36 }}
+        >
+          <div className="flex-1 text-xs font-semibold">
+            {currentDate.toLocaleDateString([], {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
+            {isToday && (
+              <span className="ml-2 rounded-full bg-magenta/20 px-2 py-px text-[10px] font-bold text-magenta">
+                Today
+              </span>
+            )}
+          </div>
+        </div>
 
-        {/* Half-hour dashed lines */}
-        {Array.from({ length: totalHours * 2 }, (_, i) => {
-          if (i % 2 === 0) return null;
-          return (
+        {/* Day grid */}
+        <div className="relative w-full" onClick={handleGridClick}>
+          {/* Hour gridlines */}
+          {Array.from({ length: totalHours }, (_, i) => (
             <div
               key={i}
-              className="absolute inset-x-0 border-b border-dashed border-ink-600/10"
-              style={{ top: i * HOUR_HEIGHT / 2 }}
+              className="absolute inset-x-0 border-b border-ink-600/20"
+              style={{ top: i * HOUR_HEIGHT }}
             />
-          );
-        })}
+          ))}
 
-        {/* Time axis */}
-        <TimeAxis height={gridHeight} />
+          {/* Half-hour dashed lines */}
+          {Array.from({ length: totalHours * 2 }, (_, i) => {
+            if (i % 2 === 0) return null;
+            return (
+              <div
+                key={i}
+                className="absolute inset-x-0 border-b border-dashed border-ink-600/10"
+                style={{ top: i * HOUR_HEIGHT / 2 }}
+              />
+            );
+          })}
 
-        {/* Time entries */}
-        {dayEntries.map((e) => (
-          <CalendarBlock
-            key={e.id}
-            entry={e}
-            running={running}
-            projects={projects}
-            dragState={dragState}
-            onAction={onBlockAction}
-            onClick={onClick}
-          />
-        ))}
+          {/* Time axis */}
+          <TimeAxis height={gridHeight} />
 
-        {/* Running timer entry (if on different day) */}
-        {running &&
-          localDayKey(running.start) !== dayKey && (
+          {/* Time entries */}
+          {dayEntries.map((e) => (
             <CalendarBlock
-              key={`run-${running.id}`}
-              entry={{
-                id: running.id,
-                description: running.description || "(no description)",
-                projectId: running.projectId,
-                start: running.start,
-                end: new Date().toISOString(),
-                billable: running.billable,
-                tags: [],
-              }}
+              key={e.id}
+              entry={e}
               running={running}
               projects={projects}
               dragState={dragState}
               onAction={onBlockAction}
               onClick={onClick}
             />
-          )}
+          ))}
 
-        {/* Now indicator */}
-        {isToday && <NowIndicator nowMs={now} />}
+          {/* Running timer entry (if on different day) */}
+          {running &&
+            localDayKey(running.start) !== dayKey && (
+              <CalendarBlock
+                key={`run-${running.id}`}
+                entry={{
+                  id: running.id,
+                  description: running.description || "(no description)",
+                  projectId: running.projectId,
+                  start: running.start,
+                  end: new Date().toISOString(),
+                  billable: running.billable,
+                  tags: [],
+                }}
+                running={running}
+                projects={projects}
+                dragState={dragState}
+                onAction={onBlockAction}
+                onClick={onClick}
+              />
+            )}
+
+          {/* Now indicator */}
+          {isToday && <NowIndicator nowMs={now} />}
+        </div>
       </div>
     </div>
   );
