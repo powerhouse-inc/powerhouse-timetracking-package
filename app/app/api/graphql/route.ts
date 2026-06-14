@@ -1,81 +1,39 @@
 /**
- * API Route: All Switchboard GraphQL requests go through llama.cpp first.
+ * API Route: Simple pass-through proxy to Switchboard GraphQL.
  *
- * Usage: POST /api/graphql with body { query, variables }
- * The LLM analyzes the query, then fetches from Switchboard,
- * then enriches the result before returning.
+ * The Next.js NextUI frontend calls POST /api/graphql, which forwards
+ * the request to the Switchboard supergraph and returns the response
+ * unchanged.  No LLM processing is performed.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 
-const LLAMA_URL = process.env.LLAMA_URL ?? "http://localhost:8100";
 const SW_URL = process.env.SWITCHBOARD_URL ?? "http://localhost:4001/graphql";
-const LLAMA_MODEL = "Qwen3.6-35B-A3B-Q8_0.gguf";
-
-async function callLlama(prompt: string, maxTokens = 8192): Promise<string> {
-  const res = await fetch(`${LLAMA_URL}/v1/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: LLAMA_MODEL,
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: maxTokens,
-      temperature: 0,
-      stream: false,
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`llama.cpp failed: ${res.status} ${text}`);
-  }
-
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content ?? "";
-}
-
-async function callSwitchboard(query: string, variables?: Record<string, unknown>) {
-  const res = await fetch(SW_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, variables }),
-  });
-
-  if (!res.ok) throw new Error(`Switchboard failed: ${res.status}`);
-  return res.json();
-}
 
 export async function POST(req: NextRequest) {
   try {
     const { query, variables } = await req.json();
-    if (!query) return NextResponse.json({ error: "Missing query" }, { status: 400 });
-
-    // Step 1: Analyze query through LLM
-    try {
-      await callLlama(
-        `Analyze this GraphQL query for a time-tracking app:\n\nQuery: ${query}\nVariables: ${JSON.stringify(variables || {})}`,
-        2048,
-      );
-    } catch {
-      // LLM busy — proceed anyway
+    if (!query) {
+      return NextResponse.json({ error: "Missing query" }, { status: 400 });
     }
 
-    // Step 2: Fetch from Switchboard
-    const rawData = await callSwitchboard(query, variables);
+    const res = await fetch(SW_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, variables }),
+    });
 
-    // Step 3: Enrich with LLM summary
-    let enriched = rawData;
-    try {
-      const summary = await callLlama(
-        `Summarize this GraphQL response for a time-tracking app:\n\n${JSON.stringify(rawData, null, 2)}`,
-        4096,
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Switchboard GraphQL error:", res.status, text);
+      return NextResponse.json(
+        { error: "Switchboard request failed", details: text },
+        { status: res.status },
       );
-      enriched = { ...rawData, _llama: { summary, model: LLAMA_MODEL, processedAt: new Date().toISOString() } };
-    } catch {
-      // LLM enrichment failed — return raw data
     }
 
-    return NextResponse.json(enriched);
+    const data = await res.json();
+    return NextResponse.json(data);
   } catch (err) {
     console.error("API GraphQL proxy error:", err);
     return NextResponse.json(
@@ -86,5 +44,5 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  return NextResponse.json({ status: "ok", llama: LLAMA_URL, switchboard: SW_URL });
+  return NextResponse.json({ status: "ok", switchboard: SW_URL });
 }
