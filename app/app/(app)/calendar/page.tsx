@@ -249,6 +249,13 @@ export default function CalendarPage() {
     onResizeEntry: handleResizeEntry,
   };
 
+  // Grid container ref for popover positioning (must be before early return)
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const [gridOffset, setGridOffset] = useState<number | null>(null);
+  useEffect(() => {
+    setGridOffset(gridContainerRef.current?.getBoundingClientRect().top ?? null);
+  }, []);
+
   // Loading state
   if (!docId || busy) {
     return (
@@ -278,15 +285,6 @@ export default function CalendarPage() {
   const editingEntry = editPopover
     ? allEntries.find((e) => e.id === editPopover.entryId)
     : null;
-
-  // Grid container ref for popover positioning
-  const gridContainerRef = useRef<HTMLDivElement>(null);
-  const [gridOffset, setGridOffset] = useState<{ top: number } | null>(null);
-  useEffect(() => {
-    if (gridContainerRef.current) {
-      setGridOffset({ top: gridContainerRef.current.getBoundingClientRect().top });
-    }
-  }, []);
 
   return (
     <>
@@ -319,7 +317,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Create popover */}
-      {createPopover && gridOffset && (
+      {createPopover && gridOffset !== null && (
         <div
           className="fixed inset-0 z-30"
           onClick={() => setCreatePopover(null)}
@@ -327,7 +325,7 @@ export default function CalendarPage() {
           <div
             className="fixed z-40 w-72"
             style={{
-              top: gridOffset.top + createPopover.clickTop - 80,
+              top: gridOffset + createPopover.clickTop - 80,
               left: createPopover.clickLeft + 16,
             }}
             onClick={(e) => e.stopPropagation()}
