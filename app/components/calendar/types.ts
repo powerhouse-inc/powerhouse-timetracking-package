@@ -13,6 +13,13 @@ export interface CalendarDragState {
   startPixel: number;
   endPixel?: number;
   dragHandle?: "top" | "bottom";
+  /** View context (week, day, or month) — needed so page handler can resolve the correct date */
+  view?: "week" | "day" | "month";
+  /** Index of the clicked day within the week (0=Mon … 6=Sun); null for day view */
+  dayIndex?: number | null;
+  /** Click position relative to the scroll container for popover anchoring */
+  clickTop?: number;
+  clickLeft?: number;
 }
 
 export interface CalendarViewProps {

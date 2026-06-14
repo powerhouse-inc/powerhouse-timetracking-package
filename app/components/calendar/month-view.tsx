@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback } from "react";
 import type { RawEntry, RawRunning } from "@/lib/api";
 import type { WorkspaceProject } from "@/lib/types";
 import type { EntryBlockAction } from "./calendar-block"
@@ -14,6 +13,8 @@ import {
   durationSeconds,
   formatDurationShort,
   formatTime24,
+  yToTime,
+  HOUR_HEIGHT,
 } from "@/lib/calendar/time"
 import type { CalendarViewProps } from "./types"
 
@@ -95,10 +96,23 @@ export function MonthView({
                   minHeight: 90,
                   borderColor: today ? "rgba(229,124,216,0.15)" : undefined,
                 }}
-                onClick={() => onBlockAction({
-                  type: "click",
-                  entryId: `__day__${dayKeyStr}`,
-                })}
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest(".tt-cal-block")) return;
+                  // Click on empty day cell → create new entry
+                  const baseDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                  const startISO = yToTime(9 * HOUR_HEIGHT, baseDate);
+                  const endISO = yToTime(9.5 * HOUR_HEIGHT, baseDate);
+                  onDragStart({
+                    type: "create",
+                    startDate: new Date(startISO),
+                    startPixel: 9 * HOUR_HEIGHT, // 9 AM
+                    endPixel: 9.5 * HOUR_HEIGHT,
+                    view: "month",
+                    dayIndex: null,
+                    clickTop: 40,
+                    clickLeft: 0,
+                  });
+                }}
               >
                 {/* Day number */}
                 <div className="px-1.5 pt-1">

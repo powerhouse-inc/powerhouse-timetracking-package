@@ -18,7 +18,6 @@ import type { EntryBlockAction } from "@/components/calendar/calendar-block"
 import {
   HOUR_HEIGHT,
   SNAP_MINUTES,
-  timeToY,
   yToTime,
 } from "@/lib/calendar/time"
 
@@ -95,6 +94,10 @@ export default function CalendarPage() {
   const [createPopover, setCreatePopover] = useState<{
     startDate: Date;
     endDate: Date;
+    clickTop: number;
+    clickLeft: number;
+    view: "week" | "day" | "month";
+    currentDate: Date;
   } | null>(null);
   const [editPopover, setEditPopover] = useState<{ entryId: string } | null>(null);
 
@@ -128,13 +131,18 @@ export default function CalendarPage() {
   const handleDragStart = useCallback((state: CalendarDragState) => {
     setDragState(state);
     if (state.type === "create") {
-      const startISO = yToTime(state.startPixel, new Date());
-      const endISO = state.endPixel
-        ? yToTime(state.endPixel, new Date())
-        : yToTime(state.startPixel + HOUR_HEIGHT / 2, new Date());
+      // Use the already-computed dates from the view component
       setCreatePopover({
-        startDate: new Date(startISO),
-        endDate: new Date(endISO),
+        startDate: state.startDate,
+        endDate: new Date(
+          state.endPixel
+            ? yToTime(state.endPixel, state.startDate)
+            : yToTime(state.startPixel + HOUR_HEIGHT / 2, state.startDate),
+        ),
+        clickTop: state.clickTop ?? 0,
+        clickLeft: state.clickLeft ?? 0,
+        view: state.view ?? "week",
+        currentDate: state.startDate,
       });
     }
   }, []);
@@ -271,6 +279,15 @@ export default function CalendarPage() {
     ? allEntries.find((e) => e.id === editPopover.entryId)
     : null;
 
+  // Grid container ref for popover positioning
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const [gridOffset, setGridOffset] = useState<{ top: number } | null>(null);
+  useEffect(() => {
+    if (gridContainerRef.current) {
+      setGridOffset({ top: gridContainerRef.current.getBoundingClientRect().top });
+    }
+  }, []);
+
   return (
     <>
       <PageHeader
@@ -288,25 +305,31 @@ export default function CalendarPage() {
         }
       />
 
-      <CalendarGrid
-        entries={allEntries}
-        running={running}
-        projects={projects}
-        onMoveEntry={handleMoveEntry}
-        onResizeEntry={handleResizeEntry}
-        onCreateEntry={handleCreateEntry}
-        onEditEntry={handleEditEntry}
-        onDeleteEntry={handleDeleteEntry}
-      />
+      <div ref={gridContainerRef}>
+        <CalendarGrid
+          entries={allEntries}
+          running={running}
+          projects={projects}
+          onMoveEntry={handleMoveEntry}
+          onResizeEntry={handleResizeEntry}
+          onCreateEntry={handleCreateEntry}
+          onEditEntry={handleEditEntry}
+          onDeleteEntry={handleDeleteEntry}
+        />
+      </div>
 
       {/* Create popover */}
-      {createPopover && (
+      {createPopover && gridOffset && (
         <div
           className="fixed inset-0 z-30"
           onClick={() => setCreatePopover(null)}
         >
           <div
-            className="fixed bottom-6 right-6 z-40"
+            className="fixed z-40 w-72"
+            style={{
+              top: gridOffset.top + createPopover.clickTop - 80,
+              left: createPopover.clickLeft + 16,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <CreatePopover

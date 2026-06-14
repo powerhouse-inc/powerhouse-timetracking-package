@@ -48,19 +48,23 @@ export function DayView({
       const el = e.currentTarget;
       const rect = el.getBoundingClientRect();
       const y = e.clientY - rect.top + el.scrollTop;
+      const x = e.clientX - rect.left;
 
-      // Only trigger if clicking on the grid area (not on a block)
       if ((e.target as HTMLElement).closest(".tt-cal-block")) return;
 
       const snappedY = Math.round(y / (SNAP_MINUTES / 60 * HOUR_HEIGHT)) * (SNAP_MINUTES / 60 * HOUR_HEIGHT);
       const startISO = yToTime(snappedY, currentDate);
-      const endISO = yToTime(snappedY + HOUR_HEIGHT / 2, currentDate); // 30-min default
+      const endISO = yToTime(snappedY + HOUR_HEIGHT / 2, currentDate);
 
       onDragStart({
         type: "create",
         startDate: new Date(startISO),
         startPixel: snappedY,
         endPixel: snappedY + HOUR_HEIGHT / 2,
+        view: "day",
+        dayIndex: null,
+        clickTop: y,
+        clickLeft: x,
       });
     },
     [currentDate, onDragStart],

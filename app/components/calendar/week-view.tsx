@@ -43,12 +43,13 @@ export function WeekView({
     }
   }, []);
 
-  // Click on blank slot to create
+  // Click on blank slot to create a time entry
   const handleGridClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>, dayIndex: number) => {
       const el = e.currentTarget;
       const rect = el.getBoundingClientRect();
       const y = e.clientY - rect.top + el.scrollTop;
+      const x = e.clientX - rect.left;
 
       if ((e.target as HTMLElement).closest(".tt-cal-block")) return;
 
@@ -62,6 +63,10 @@ export function WeekView({
         startDate: new Date(startISO),
         startPixel: snappedY,
         endPixel: snappedY + HOUR_HEIGHT / 2,
+        view: "week",
+        dayIndex,
+        clickTop: y,
+        clickLeft: x,
       });
     },
     [weekDays, onDragStart],
@@ -124,7 +129,10 @@ export function WeekView({
                 height: gridHeight,
                 borderColor: today ? "rgba(229,124,216,0.15)" : undefined,
               }}
-              onClick={(e) => handleGridClick(e, dayIndex)}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest(".tt-cal-block")) return;
+                handleGridClick(e, dayIndex);
+              }}
             >
               {/* Hour gridlines */}
               {Array.from({ length: totalHours }, (_, h) => (
