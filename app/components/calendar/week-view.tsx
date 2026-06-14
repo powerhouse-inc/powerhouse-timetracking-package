@@ -70,7 +70,7 @@ export function WeekView({
   );
 
   return (
-    <div className="relative">
+    <div className="relative overflow-x-hidden min-w-0">
       {/* Header: day names */}
       <div
         className="flex border-b border-ink-600/60"
