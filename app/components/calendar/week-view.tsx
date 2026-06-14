@@ -70,7 +70,7 @@ export function WeekView({
   );
 
   return (
-    <div className="relative overflow-x-hidden min-w-0">
+    <div className="relative w-full">
       {/* Header: day names */}
       <div
         className="flex border-b border-ink-600/60"
@@ -100,7 +100,7 @@ export function WeekView({
       {/* Grid */}
       <div
         ref={scrollRef}
-        className="relative"
+        className="relative flex"
         style={{ height: gridHeight, overflowY: "auto" }}
       >
         {/* Time axis */}

@@ -54,7 +54,7 @@ export function MonthView({
   }
 
   return (
-    <div className="flex flex-col overflow-x-hidden min-w-0">
+    <div className="flex flex-col w-full">
       {/* Day headers */}
       <div className="flex border-b border-ink-600/60">
         {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => (

@@ -69,7 +69,7 @@ export function DayView({
   );
 
   return (
-    <div className="relative overflow-x-hidden min-w-0">
+    <div className="relative w-full">
       {/* Header: day name */}
       <div
         className="flex items-center border-b border-ink-600/60 px-4 py-2"
