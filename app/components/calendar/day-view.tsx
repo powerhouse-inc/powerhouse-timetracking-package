@@ -35,10 +35,10 @@ export function DayView({
   const gridHeight = totalHours * HOUR_HEIGHT;
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to midnight on mount (full 24h visible)
+  // Scroll to 7 AM on mount
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
+      scrollRef.current.scrollTop = 7 * HOUR_HEIGHT;
     }
   }, []);
 

@@ -36,10 +36,10 @@ export function WeekView({
   const gridHeight = totalHours * HOUR_HEIGHT;
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to midnight on mount (full 24h visible)
+  // Scroll to 7 AM on mount
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
+      scrollRef.current.scrollTop = 7 * HOUR_HEIGHT;
     }
   }, []);
 
@@ -71,7 +71,7 @@ export function WeekView({
     <div className="relative w-full">
       {/* Header: day names */}
       <div
-        className="flex border-b border-ink-600/60"
+        className="flex sticky top-0 z-20 border-b border-ink-600/60 bg-ink-800"
         style={{ height: 36 }}
       >
         <div className="flex-none border-r border-ink-600/40" style={{ width: 56 }} />
