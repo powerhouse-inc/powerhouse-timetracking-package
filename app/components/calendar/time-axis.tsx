@@ -1,6 +1,6 @@
 "use client";
 
-import { HOUR_HEIGHT, formatTime24 } from "@/lib/calendar/time"
+import { HOUR_HEIGHT } from "@/lib/calendar/time"
 
 interface TimeAxisProps {
   height: number;
@@ -18,8 +18,7 @@ export function TimeAxis({ height }: TimeAxisProps) {
     >
       {ticks.map((h) => {
         const y = h * HOUR_HEIGHT;
-        const isTop = h === 0;
-        const label = isTop ? "12 AM" : h < 12 ? `${h} AM` : h === 12 ? "12 PM" : `${h - 12} PM`;
+        const label = `${String(h).padStart(2, "0")}:00`;
         return (
           <div
             key={h}

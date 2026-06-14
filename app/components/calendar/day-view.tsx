@@ -10,8 +10,6 @@ import { TimeAxis } from "./time-axis"
 import {
   HOUR_HEIGHT,
   SNAP_MINUTES,
-  DEFAULT_WORK_START,
-  hourMinuteToY,
   localDayKey,
   yToTime,
 } from "@/lib/calendar/time"
@@ -37,10 +35,10 @@ export function DayView({
   const gridHeight = totalHours * HOUR_HEIGHT;
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to working hours on mount
+  // Scroll to midnight on mount (full 24h visible)
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = hourMinuteToY(DEFAULT_WORK_START, 0);
+      scrollRef.current.scrollTop = 0;
     }
   }, []);
 
