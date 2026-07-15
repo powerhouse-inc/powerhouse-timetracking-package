@@ -3,13 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchLeadFunnel,
+  fetchScopesOfWork,
   fetchTimesheets,
   fetchWorkspace,
   type LeadFunnelDoc,
   type TimesheetDoc,
   type WorkspaceDoc,
 } from "./api";
-import type { Role } from "./types";
+import type { Role, ScopeOfWorkDoc } from "./types";
 
 export function useWorkspace() {
   return useQuery<WorkspaceDoc | null>({
@@ -52,6 +53,14 @@ export function useLeadFunnel() {
   });
 }
 
+export function useScopesOfWork() {
+  return useQuery<ScopeOfWorkDoc[]>({
+    queryKey: ["scopesOfWork"],
+    queryFn: fetchScopesOfWork,
+    refetchInterval: 4000,
+  });
+}
+
 /** Invalidate the read queries after a mutation so the UI reflects changes fast. */
 export function useRefresh() {
   const qc = useQueryClient();
@@ -59,6 +68,7 @@ export function useRefresh() {
     void qc.invalidateQueries({ queryKey: ["timesheets"] });
     void qc.invalidateQueries({ queryKey: ["workspace"] });
     void qc.invalidateQueries({ queryKey: ["leadFunnel"] });
+    void qc.invalidateQueries({ queryKey: ["scopesOfWork"] });
   };
 }
 

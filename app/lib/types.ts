@@ -123,3 +123,63 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ------------------------------- delivery ------------------------------ */
+
+export type SowStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "IN_PROGRESS"
+  | "REJECTED"
+  | "APPROVED"
+  | "DELIVERED"
+  | "CANCELED";
+
+export type DeliverableStatus =
+  | "WONT_DO"
+  | "DRAFT"
+  | "TODO"
+  | "BLOCKED"
+  | "IN_PROGRESS"
+  | "DELIVERED"
+  | "CANCELED";
+
+export type BudgetUnit = "StoryPoints" | "Hours";
+
+export interface SowBudgetAnchor {
+  project: string | null;
+  unit: BudgetUnit | null;
+  unitCost: number;
+  quantity: number;
+  margin: number;
+}
+
+export interface SowDeliverable {
+  id: string;
+  title: string;
+  code: string;
+  description: string;
+  status: DeliverableStatus;
+  /** normalized 0–100 completion, or null when unset */
+  progressPercent: number | null;
+  budgetAnchor: SowBudgetAnchor | null;
+}
+
+export interface SowProject {
+  id: string;
+  code: string;
+  title: string;
+  budget: number | null;
+  currency: string | null;
+  budgetType: string | null;
+}
+
+export interface ScopeOfWorkDoc {
+  id: string;
+  name: string;
+  title: string;
+  description: string;
+  status: SowStatus;
+  projects: SowProject[];
+  deliverables: SowDeliverable[];
+}

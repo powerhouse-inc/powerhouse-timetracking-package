@@ -1,11 +1,16 @@
 import { DRIVE_ID } from "./config";
 import { gql } from "./gql";
 import type {
+  DeliverableStatus,
   Lead,
   LeadPriority,
   LeadSource,
   LeadStage,
   Role,
+  ScopeOfWorkDoc,
+  SowDeliverable,
+  SowProject,
+  SowStatus,
   WorkspaceClient,
   WorkspaceMember,
   WorkspaceProject,
@@ -447,4 +452,171 @@ export const leadApi = {
       docId,
       input: { leadId, id: randomId(), timestamp: new Date().toISOString(), ...input },
     }),
+};
+
+/* ============================== delivery =============================== */
+
+interface RawProgress {
+  __typename: "StoryPoint" | "Percentage" | "Binary";
+  total?: number;
+  completed?: number;
+  value?: number;
+  done?: boolean | null;
+}
+
+function normalizeProgress(p: RawProgress | null): number | null {
+  if (!p) return null;
+  if (p.__typename === "Percentage") return p.value ?? 0;
+  if (p.__typename === "Binary") return p.done ? 100 : 0;
+  if (p.__typename === "StoryPoint") {
+    const total = p.total ?? 0;
+    return total > 0 ? Math.round(((p.completed ?? 0) / total) * 100) : 0;
+  }
+  return null;
+}
+
+interface SowItem {
+  id: string;
+  name: string;
+  state: {
+    global: {
+      title: string;
+      description: string;
+      status: SowStatus;
+      projects: SowProject[];
+      deliverables: (Omit<SowDeliverable, "progressPercent"> & {
+        workProgress: RawProgress | null;
+      })[];
+    };
+  };
+}
+
+const SCOPES_QUERY = `
+  query {
+    ScopeOfWork {
+      documents {
+        items {
+          id
+          name
+          state {
+            global {
+              title description status
+              projects { id code title budget currency budgetType }
+              deliverables {
+                id title code description status
+                budgetAnchor { project unit unitCost quantity margin }
+                workProgress {
+                  __typename
+                  ... on StoryPoint { total completed }
+                  ... on Percentage { value }
+                  ... on Binary { done }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export async function fetchScopesOfWork(): Promise<ScopeOfWorkDoc[]> {
+  const data = await gql<{ ScopeOfWork: { documents: { items: SowItem[] } } }>(
+    SCOPES_QUERY,
+  );
+  return data.ScopeOfWork.documents.items.map((d) => {
+    const g = d.state.global;
+    return {
+      id: d.id,
+      name: d.name,
+      title: g.title,
+      description: g.description,
+      status: g.status,
+      projects: g.projects,
+      deliverables: g.deliverables.map((dl) => ({
+        id: dl.id,
+        title: dl.title,
+        code: dl.code,
+        description: dl.description,
+        status: dl.status,
+        budgetAnchor: dl.budgetAnchor,
+        progressPercent: normalizeProgress(dl.workProgress),
+      })),
+    };
+  });
+}
+
+export async function createScopeOfWork(
+  title: string,
+  description: string,
+): Promise<string> {
+  const data = await gql<{ ScopeOfWork: { createDocument: { id: string } } }>(
+    `mutation($name: String!, $parent: String) {
+      ScopeOfWork { createDocument(name: $name, parentIdentifier: $parent) { id } }
+    }`,
+    { name: title, parent: DRIVE_ID },
+  );
+  const id = data.ScopeOfWork.createDocument.id;
+  await mutate("ScopeOfWork", "editScopeOfWork", "docId: $docId, input: $input", {
+    docId: id,
+    input: { title, description },
+  });
+  return id;
+}
+
+export const sowApi = {
+  editScopeOfWork: (
+    docId: string,
+    patch: { title?: string; description?: string; status?: SowStatus },
+  ) =>
+    mutate("ScopeOfWork", "editScopeOfWork", "docId: $docId, input: $input", {
+      docId,
+      input: patch,
+    }),
+  addProject: (docId: string, input: { code: string; title: string }) =>
+    mutate("ScopeOfWork", "addProject", "docId: $docId, input: $input", {
+      docId,
+      input: { id: randomId(), ...input },
+    }),
+  setProjectTotalBudget: (docId: string, projectId: string, totalBudget: number) =>
+    mutate("ScopeOfWork", "setProjectTotalBudget", "docId: $docId, input: $input", {
+      docId,
+      input: { projectId, totalBudget },
+    }),
+  addDeliverable: (
+    docId: string,
+    input: { title: string; code: string; description: string },
+  ) =>
+    mutate("ScopeOfWork", "addDeliverable", "docId: $docId, input: $input", {
+      docId,
+      input: { id: randomId(), status: "TODO", ...input },
+    }),
+  editDeliverable: (
+    docId: string,
+    id: string,
+    patch: { title?: string; status?: DeliverableStatus },
+  ) =>
+    mutate("ScopeOfWork", "editDeliverable", "docId: $docId, input: $input", {
+      docId,
+      input: { id, ...patch },
+    }),
+  setDeliverableProgress: (docId: string, id: string, percentage: number) =>
+    mutate("ScopeOfWork", "setDeliverableProgress", "docId: $docId, input: $input", {
+      docId,
+      input: { id, workProgress: { percentage } },
+    }),
+  setDeliverableHours: (
+    docId: string,
+    deliverableId: string,
+    input: { project: string | null; quantity: number; unitCost: number },
+  ) =>
+    mutate(
+      "ScopeOfWork",
+      "setDeliverableBudgetAnchorProject",
+      "docId: $docId, input: $input",
+      {
+        docId,
+        input: { deliverableId, unit: "Hours", margin: 0, ...input },
+      },
+    ),
 };
