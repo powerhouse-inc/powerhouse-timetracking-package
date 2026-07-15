@@ -20,7 +20,7 @@ export const documentModel: DocumentModelGlobalState = {
         },
         global: {
           schema:
-            "type LeadFunnelState {\n  name: String!\n  leads: [Lead!]!\n}\n\ntype Lead {\n  id: OID!\n  name: String!\n  company: String\n  email: EmailAddress\n  phone: String\n  source: LeadSource!\n  stage: LeadStage!\n  priority: LeadPriority!\n  estimatedValue: Amount_Money\n  owner: String\n  score: Int!\n  tags: [String!]!\n  notes: String\n  activities: [Activity!]!\n  createdAt: DateTime!\n  updatedAt: DateTime!\n}\n\ntype Activity {\n  id: OID!\n  type: ActivityType!\n  note: String\n  timestamp: DateTime!\n}\n\nenum LeadStage { NEW CONTACTED QUALIFIED PROPOSAL NEGOTIATION WON LOST }\n\nenum LeadSource { WEBSITE REFERRAL COLD_OUTREACH EVENT SOCIAL OTHER }\n\nenum LeadPriority { LOW MEDIUM HIGH }\n\nenum ActivityType { CALL EMAIL MEETING NOTE }",
+            "type LeadFunnelState {\n  name: String!\n  leads: [Lead!]!\n}\n\ntype Lead {\n  id: OID!\n  name: String!\n  company: String\n  clientId: OID\n  email: EmailAddress\n  phone: String\n  source: LeadSource!\n  stage: LeadStage!\n  priority: LeadPriority!\n  estimatedValue: Amount_Money\n  owner: String\n  score: Int!\n  tags: [String!]!\n  notes: String\n  activities: [Activity!]!\n  createdAt: DateTime!\n  updatedAt: DateTime!\n}\n\ntype Activity {\n  id: OID!\n  type: ActivityType!\n  note: String\n  timestamp: DateTime!\n}\n\nenum LeadStage { NEW CONTACTED QUALIFIED PROPOSAL NEGOTIATION WON LOST }\n\nenum LeadSource { WEBSITE REFERRAL COLD_OUTREACH EVENT SOCIAL OTHER }\n\nenum LeadPriority { LOW MEDIUM HIGH }\n\nenum ActivityType { CALL EMAIL MEETING NOTE }",
           examples: [],
           initialValue: '{"name":"Lead Funnel","leads":[]}',
         },
@@ -55,7 +55,7 @@ export const documentModel: DocumentModelGlobalState = {
               name: "ADD_LEAD",
               description: "Add a new lead to the funnel in the NEW stage",
               schema:
-                "input AddLeadInput {\n  id: OID!\n  name: String!\n  company: String\n  email: EmailAddress\n  phone: String\n  source: LeadSource\n  priority: LeadPriority\n  estimatedValue: Amount_Money\n  owner: String\n  score: Int\n  tags: [String!]\n  notes: String\n  createdAt: DateTime!\n}",
+                "input AddLeadInput {\n  id: OID!\n  name: String!\n  company: String\n  clientId: OID\n  email: EmailAddress\n  phone: String\n  source: LeadSource\n  priority: LeadPriority\n  estimatedValue: Amount_Money\n  owner: String\n  score: Int\n  tags: [String!]\n  notes: String\n  createdAt: DateTime!\n}",
               template: "Add a new lead to the funnel in the NEW stage",
               reducer:
                 'if (state.leads.some((l) => l.id === action.input.id)) {\n  throw new DuplicateLeadIdError(`Lead with id ${action.input.id} already exists`);\n}\nstate.leads.push({\n  id: action.input.id,\n  name: action.input.name,\n  company: action.input.company || null,\n  email: action.input.email || null,\n  phone: action.input.phone || null,\n  source: action.input.source || "OTHER",\n  stage: "NEW",\n  priority: action.input.priority || "MEDIUM",\n  estimatedValue: action.input.estimatedValue || null,\n  owner: action.input.owner || null,\n  score: action.input.score ?? 0,\n  tags: action.input.tags || [],\n  notes: action.input.notes || null,\n  activities: [],\n  createdAt: action.input.createdAt,\n  updatedAt: action.input.createdAt,\n});',
@@ -77,7 +77,7 @@ export const documentModel: DocumentModelGlobalState = {
               name: "UPDATE_LEAD",
               description: "Update editable fields of a lead",
               schema:
-                "input UpdateLeadInput {\n  id: OID!\n  name: String\n  company: String\n  email: EmailAddress\n  phone: String\n  source: LeadSource\n  priority: LeadPriority\n  estimatedValue: Amount_Money\n  owner: String\n  score: Int\n  notes: String\n  updatedAt: DateTime!\n}",
+                "input UpdateLeadInput {\n  id: OID!\n  name: String\n  company: String\n  clientId: OID\n  email: EmailAddress\n  phone: String\n  source: LeadSource\n  priority: LeadPriority\n  estimatedValue: Amount_Money\n  owner: String\n  score: Int\n  notes: String\n  updatedAt: DateTime!\n}",
               template: "Update editable fields of a lead",
               reducer:
                 "const lead = state.leads.find((l) => l.id === action.input.id);\nif (!lead) {\n  throw new LeadNotFoundError(`Lead with id ${action.input.id} not found`);\n}\nif (action.input.name) lead.name = action.input.name;\nif (action.input.company) lead.company = action.input.company;\nif (action.input.email) lead.email = action.input.email;\nif (action.input.phone) lead.phone = action.input.phone;\nif (action.input.source) lead.source = action.input.source;\nif (action.input.priority) lead.priority = action.input.priority;\nif (action.input.estimatedValue) lead.estimatedValue = action.input.estimatedValue;\nif (action.input.owner) lead.owner = action.input.owner;\nif (action.input.score !== undefined && action.input.score !== null) lead.score = action.input.score;\nif (action.input.notes) lead.notes = action.input.notes;\nlead.updatedAt = action.input.updatedAt;",

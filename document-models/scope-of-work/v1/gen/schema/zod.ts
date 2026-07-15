@@ -253,6 +253,7 @@ export function AddProjectInputSchema(): z.ZodObject<
     projectOwner: z.string().nullish(),
     slug: z.string().nullish(),
     title: z.string(),
+    workspaceProjectId: z.string().nullish(),
   });
 }
 
@@ -495,6 +496,7 @@ export function ProjectSchema(): z.ZodObject<Properties<Project>> {
     scope: z.lazy(() => DeliverablesSetSchema().nullish()),
     slug: z.string(),
     title: z.string(),
+    workspaceProjectId: z.string().nullish(),
   });
 }
 
@@ -681,6 +683,7 @@ export function UpdateProjectInputSchema(): z.ZodObject<
     imageUrl: z.url().nullish(),
     slug: z.string().nullish(),
     title: z.string().nullish(),
+    workspaceProjectId: z.string().nullish(),
   });
 }
 

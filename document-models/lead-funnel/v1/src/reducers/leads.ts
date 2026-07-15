@@ -15,6 +15,7 @@ export const leadFunnelLeadsOperations: LeadFunnelLeadsOperations = {
       id: action.input.id,
       name: action.input.name,
       company: action.input.company || null,
+      clientId: action.input.clientId || null,
       email: action.input.email || null,
       phone: action.input.phone || null,
       source: action.input.source || "OTHER",
@@ -37,6 +38,7 @@ export const leadFunnelLeadsOperations: LeadFunnelLeadsOperations = {
     }
     if (action.input.name) lead.name = action.input.name;
     if (action.input.company) lead.company = action.input.company;
+    if (action.input.clientId) lead.clientId = action.input.clientId;
     if (action.input.email) lead.email = action.input.email;
     if (action.input.phone) lead.phone = action.input.phone;
     if (action.input.source) lead.source = action.input.source;

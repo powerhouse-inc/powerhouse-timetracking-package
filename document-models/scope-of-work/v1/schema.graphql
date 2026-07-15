@@ -105,6 +105,7 @@ type KeyResult {
 
 type Project {
   id: OID!
+  workspaceProjectId: OID
   slug: String!
   code: String!
   title: String!
@@ -403,6 +404,7 @@ input EditAgentInput {
 
 input AddProjectInput {
   id: OID!
+  workspaceProjectId: OID
   code: String!
   title: String!
   slug: String
@@ -432,6 +434,7 @@ enum PMCurrencyInput {
 
 input UpdateProjectInput {
   id: OID! 
+  workspaceProjectId: OID
   code: String 
   slug: String
   title: String 

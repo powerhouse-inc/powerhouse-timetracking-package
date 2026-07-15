@@ -80,6 +80,7 @@ export type AddActivityInput = {
 };
 
 export type AddLeadInput = {
+  clientId?: InputMaybe<Scalars["OID"]["input"]>;
   company?: InputMaybe<Scalars["String"]["input"]>;
   createdAt: Scalars["DateTime"]["input"];
   email?: InputMaybe<Scalars["EmailAddress"]["input"]>;
@@ -112,6 +113,7 @@ export type DeleteLeadInput = {
 
 export type Lead = {
   activities: Array<Activity>;
+  clientId: Maybe<Scalars["OID"]["output"]>;
   company: Maybe<Scalars["String"]["output"]>;
   createdAt: Scalars["DateTime"]["output"];
   email: Maybe<Scalars["EmailAddress"]["output"]>;
@@ -174,6 +176,7 @@ export type SetFunnelNameInput = {
 };
 
 export type UpdateLeadInput = {
+  clientId?: InputMaybe<Scalars["OID"]["input"]>;
   company?: InputMaybe<Scalars["String"]["input"]>;
   email?: InputMaybe<Scalars["EmailAddress"]["input"]>;
   estimatedValue?: InputMaybe<Scalars["Amount_Money"]["input"]>;

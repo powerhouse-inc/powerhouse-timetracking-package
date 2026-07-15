@@ -250,4 +250,24 @@ describe("Leads operations", () => {
     );
     expect(updatedDocument.operations.global[0].index).toEqual(0);
   });
+
+  it("links a lead to a workspace client via clientId (add and update)", () => {
+    let doc = utils.createDocument();
+    doc = reducer(
+      doc,
+      addLead({
+        id: "lead-c",
+        name: "Linked Co",
+        clientId: "client-1",
+        createdAt: T0,
+      }),
+    );
+    expect(doc.state.global.leads[0].clientId).toBe("client-1");
+
+    doc = reducer(
+      doc,
+      updateLead({ id: "lead-c", clientId: "client-2", updatedAt: T1 }),
+    );
+    expect(doc.state.global.leads[0].clientId).toBe("client-2");
+  });
 });

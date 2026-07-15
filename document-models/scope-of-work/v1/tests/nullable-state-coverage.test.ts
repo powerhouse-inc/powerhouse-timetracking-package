@@ -80,6 +80,7 @@ function mkProject(id: string, over: Partial<Project> = {}): Project {
     slug: "",
     code: id,
     title: id,
+    workspaceProjectId: null,
     projectOwner: null,
     abstract: null,
     imageUrl: null,

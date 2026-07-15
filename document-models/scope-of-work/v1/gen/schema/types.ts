@@ -128,6 +128,7 @@ export type AddProjectInput = {
   projectOwner?: InputMaybe<Scalars["ID"]["input"]>;
   slug?: InputMaybe<Scalars["String"]["input"]>;
   title: Scalars["String"]["input"];
+  workspaceProjectId?: InputMaybe<Scalars["OID"]["input"]>;
 };
 
 export type AddRoadmapInput = {
@@ -327,6 +328,7 @@ export type Project = {
   scope: Maybe<DeliverablesSet>;
   slug: Scalars["String"]["output"];
   title: Scalars["String"]["output"];
+  workspaceProjectId: Maybe<Scalars["OID"]["output"]>;
 };
 
 export type RemoveAgentInput = {
@@ -458,6 +460,7 @@ export type UpdateProjectInput = {
   imageUrl?: InputMaybe<Scalars["URL"]["input"]>;
   slug?: InputMaybe<Scalars["String"]["input"]>;
   title?: InputMaybe<Scalars["String"]["input"]>;
+  workspaceProjectId?: InputMaybe<Scalars["OID"]["input"]>;
 };
 
 export type UpdateProjectOwnerInput = {

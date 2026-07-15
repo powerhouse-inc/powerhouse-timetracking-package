@@ -81,6 +81,7 @@ export function AddActivityInputSchema(): z.ZodObject<
 
 export function AddLeadInputSchema(): z.ZodObject<Properties<AddLeadInput>> {
   return z.object({
+    clientId: z.string().nullish(),
     company: z.string().nullish(),
     createdAt: z.iso.datetime(),
     email: z.email().nullish(),
@@ -126,6 +127,7 @@ export function LeadSchema(): z.ZodObject<Properties<Lead>> {
   return z.object({
     __typename: z.literal("Lead").optional(),
     activities: z.array(z.lazy(() => ActivitySchema())),
+    clientId: z.string().nullish(),
     company: z.string().nullish(),
     createdAt: z.iso.datetime(),
     email: z.email().nullish(),
@@ -192,6 +194,7 @@ export function UpdateLeadInputSchema(): z.ZodObject<
   Properties<UpdateLeadInput>
 > {
   return z.object({
+    clientId: z.string().nullish(),
     company: z.string().nullish(),
     email: z.email().nullish(),
     estimatedValue: z.number().nullish(),

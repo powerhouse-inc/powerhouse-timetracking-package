@@ -28,6 +28,7 @@ type Lead {
   id: OID!
   name: String!
   company: String
+  clientId: OID
   email: EmailAddress
   phone: String
   source: LeadSource!
@@ -70,6 +71,7 @@ input AddLeadInput {
   id: OID!
   name: String!
   company: String
+  clientId: OID
   email: EmailAddress
   phone: String
   source: LeadSource
@@ -86,6 +88,7 @@ input UpdateLeadInput {
   id: OID!
   name: String
   company: String
+  clientId: OID
   email: EmailAddress
   phone: String
   source: LeadSource
