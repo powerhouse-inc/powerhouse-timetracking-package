@@ -1,6 +1,17 @@
 allowBuilds:
   '@apollo/protobufjs': set this to true or false
   '@datadog/pprof': set this to true or false
+  '@ipshipyard/node-datachannel': set this to true or false
   '@parcel/watcher': set this to true or false
+  '@powerhousedao/connect': set this to true or false
+  '@prisma/client': set this to true or false
+  '@prisma/engines': set this to true or false
+  '@sentry/cli': set this to true or false
+  bufferutil: set this to true or false
+  cypress: set this to true or false
   esbuild: set this to true or false
+  keccak: set this to true or false
+  prisma: set this to true or false
   protobufjs: set this to true or false
+  sqlite3: set this to true or false
+  utf-8-validate: set this to true or false

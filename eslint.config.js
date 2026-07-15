@@ -117,6 +117,28 @@ const javascriptConfig = {
   extends: [tseslint.configs.disableTypeChecked],
 };
 
+/**
+ * Vendored UI / scripts config.
+ *
+ * The `editors/` document editors and the helper `scripts/` are imported from
+ * upstream Powerhouse packages and kept as-is ("copy but don't polish"): the
+ * standalone Next.js app in `app/` is the polished surface, not the Connect
+ * editors. Their heavy use of loosely-typed reactor/GraphQL data trips the
+ * type-checked `no-unsafe-*` family en masse. Downgrade that family to
+ * warnings *only here* so it doesn't require a full type-safety rewrite of
+ * vendored code — `document-models/` reducers stay fully strict.
+ */
+const vendoredUiConfig = {
+  files: ["editors/**/*.{ts,tsx}", "scripts/**/*.{ts,tsx}"],
+  rules: {
+    "@typescript-eslint/no-unsafe-member-access": "warn",
+    "@typescript-eslint/no-unsafe-assignment": "warn",
+    "@typescript-eslint/no-unsafe-argument": "warn",
+    "@typescript-eslint/no-unsafe-call": "warn",
+    "@typescript-eslint/no-unsafe-return": "warn",
+  },
+};
+
 /** Recommended config from eslint */
 const eslintRecommendedConfig = eslint.configs.recommended;
 
@@ -133,5 +155,6 @@ export default defineConfig(
   typescriptConfig,
   reactConfig,
   javascriptConfig,
+  vendoredUiConfig,
   eslintPluginPrettierRecommended,
 );
