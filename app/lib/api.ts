@@ -512,7 +512,7 @@ export async function convertLeadToProject(
 /* ============================== delivery =============================== */
 
 interface RawProgress {
-  __typename: "StoryPoint" | "Percentage" | "Binary";
+  __typename: string;
   total?: number;
   completed?: number;
   value?: number;
@@ -521,9 +521,10 @@ interface RawProgress {
 
 function normalizeProgress(p: RawProgress | null): number | null {
   if (!p) return null;
-  if (p.__typename === "Percentage") return p.value ?? 0;
-  if (p.__typename === "Binary") return p.done ? 100 : 0;
-  if (p.__typename === "StoryPoint") {
+  const t = p.__typename;
+  if (t.endsWith("Percentage")) return p.value ?? 0;
+  if (t.endsWith("Binary")) return p.done ? 100 : 0;
+  if (t.endsWith("StoryPoint")) {
     const total = p.total ?? 0;
     return total > 0 ? Math.round(((p.completed ?? 0) / total) * 100) : 0;
   }
@@ -562,9 +563,9 @@ const SCOPES_QUERY = `
                 budgetAnchor { project unit unitCost quantity margin }
                 workProgress {
                   __typename
-                  ... on StoryPoint { total completed }
-                  ... on Percentage { value }
-                  ... on Binary { done }
+                  ... on ScopeOfWork_StoryPoint { total completed }
+                  ... on ScopeOfWork_Percentage { value }
+                  ... on ScopeOfWork_Binary { done }
                 }
               }
             }
