@@ -28,6 +28,11 @@ This is the Powerhouse team's **operations app** — time, sales, delivery and
 billing in one place. The `TimetrackingWorkspace` document is the shared
 directory of clients/projects/members that the other sections link to.
 
+- **Dashboard** (`/`) — at-a-glance operations overview: open pipeline, won value,
+  outstanding/collected invoices (with overdue flagging), tracked hours, active
+  deliverables, clients/projects and team; top-deals and overdue-invoice panels.
+- **My Work** — the signed-in user's tracked hours, open leads, assigned
+  deliverables and billing statement in one place.
 - **Timer** — live running timer (start/stop/discard), day-grouped entries, inline edit.
 - **Calendar** — drag-and-drop day/week/month time tracking.
 - **Reports** — totals, weekly bar chart, project donut, breakdown. Managers get a Team toggle.
@@ -39,9 +44,22 @@ directory of clients/projects/members that the other sections link to.
   hours vs. tracked hours** per project (tracked hours summed from timesheets,
   matched by project name/code).
 - **Billing › Invoices / Statements** — invoices (parties, line items, status
-  lifecycle, totals) and contributor billing statements (cash + POWT line items).
-  Managerial/billing roles only.
+  lifecycle, payments, overdue aging, prefill from tracked hours) and contributor
+  billing statements (cash + POWT, prefill from tracked hours). Billing roles only.
+- **Billing › Finance** — read-only view of the account registry, per-account
+  transaction ledgers, expense reports (budget vs actuals) and snapshot reports.
+- **Analyze › Profitability** — tracked value (billable hours × rate) vs invoiced
+  by client, exposing unbilled work-in-progress.
 - **Projects / Clients / Members** — management tables (managerial roles only). Members shows the Access Rights column.
+
+### Connected lifecycle
+
+The sections are wired into one operating loop, not four silos: a **won lead
+converts** to a workspace client + project; **tracked time** on that project
+flows into **invoices** and **billing statements** via "Prefill from tracked
+hours"; and leads / SoW projects carry real workspace **id links** (not just
+name matches), with the delivery hours view flagging unlinked projects. Reactor
+read/write failures surface as toasts rather than silent empty states.
 
 Each section talks to its document model over the same GraphQL namespace
 pattern (`<Model> { documents }` reads, `<Model>_<Op>Input` mutations) via
