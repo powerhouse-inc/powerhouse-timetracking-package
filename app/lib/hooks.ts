@@ -2,8 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  fetchLeadFunnel,
   fetchTimesheets,
   fetchWorkspace,
+  type LeadFunnelDoc,
   type TimesheetDoc,
   type WorkspaceDoc,
 } from "./api";
@@ -42,12 +44,21 @@ export function useMyRole(address: string | null | undefined): Role | null {
   return member?.role ?? null;
 }
 
+export function useLeadFunnel() {
+  return useQuery<LeadFunnelDoc | null>({
+    queryKey: ["leadFunnel"],
+    queryFn: fetchLeadFunnel,
+    refetchInterval: 4000,
+  });
+}
+
 /** Invalidate the read queries after a mutation so the UI reflects changes fast. */
 export function useRefresh() {
   const qc = useQueryClient();
   return () => {
     void qc.invalidateQueries({ queryKey: ["timesheets"] });
     void qc.invalidateQueries({ queryKey: ["workspace"] });
+    void qc.invalidateQueries({ queryKey: ["leadFunnel"] });
   };
 }
 

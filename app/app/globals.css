@@ -70,4 +70,7 @@ body::before {
   .tt-chip {
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
+  .tt-label {
+    @apply mb-1 block text-[11px] font-semibold uppercase tracking-wider text-mist-400;
+  }
 }

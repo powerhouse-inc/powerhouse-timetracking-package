@@ -1,6 +1,10 @@
 import { DRIVE_ID } from "./config";
 import { gql } from "./gql";
 import type {
+  Lead,
+  LeadPriority,
+  LeadSource,
+  LeadStage,
   Role,
   WorkspaceClient,
   WorkspaceMember,
@@ -161,7 +165,7 @@ function randomId(): string {
 }
 
 async function mutate(
-  namespace: "Timesheet" | "TimetrackingWorkspace",
+  namespace: string,
   field: string,
   args: string,
   vars: Record<string, unknown>,
@@ -331,5 +335,116 @@ export const workspaceApi = {
     mutate("TimetrackingWorkspace", "archiveMember", "docId: $docId, input: $input", {
       docId,
       input: { id },
+    }),
+};
+
+/* ================================ sales ================================= */
+
+export interface LeadFunnelDoc {
+  id: string;
+  name: string;
+  leads: Lead[];
+}
+
+const LEAD_FUNNELS_QUERY = `
+  query {
+    LeadFunnel {
+      documents {
+        items {
+          id
+          name
+          state {
+            global {
+              name
+              leads {
+                id name company email phone source stage priority
+                estimatedValue owner score tags notes createdAt updatedAt
+                activities { id type note timestamp }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+interface LeadFunnelItem {
+  id: string;
+  name: string;
+  state: { global: { name: string; leads: Lead[] } };
+}
+
+export async function fetchLeadFunnel(): Promise<LeadFunnelDoc | null> {
+  const data = await gql<{ LeadFunnel: { documents: { items: LeadFunnelItem[] } } }>(
+    LEAD_FUNNELS_QUERY,
+  );
+  const item = data.LeadFunnel.documents.items[0];
+  if (!item) return null;
+  return { id: item.id, name: item.state.global.name, leads: item.state.global.leads };
+}
+
+export async function ensureLeadFunnel(name: string): Promise<string> {
+  const existing = await fetchLeadFunnel();
+  if (existing) return existing.id;
+  const data = await gql<{ LeadFunnel: { createDocument: { id: string } } }>(
+    `mutation($name: String!, $parent: String) {
+      LeadFunnel { createDocument(name: $name, parentIdentifier: $parent) { id } }
+    }`,
+    { name, parent: DRIVE_ID },
+  );
+  const id = data.LeadFunnel.createDocument.id;
+  await mutate("LeadFunnel", "setFunnelName", "docId: $docId, input: $input", {
+    docId: id,
+    input: { name },
+  });
+  return id;
+}
+
+export interface NewLeadInput {
+  name: string;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+  source: LeadSource;
+  priority: LeadPriority;
+  estimatedValue: number | null;
+  owner: string | null;
+  notes: string | null;
+}
+
+export const leadApi = {
+  addLead: (docId: string, input: NewLeadInput) =>
+    mutate("LeadFunnel", "addLead", "docId: $docId, input: $input", {
+      docId,
+      input: { id: randomId(), createdAt: new Date().toISOString(), ...input },
+    }),
+  updateLead: (
+    docId: string,
+    id: string,
+    patch: Partial<Omit<NewLeadInput, never>> & { score?: number },
+  ) =>
+    mutate("LeadFunnel", "updateLead", "docId: $docId, input: $input", {
+      docId,
+      input: { id, updatedAt: new Date().toISOString(), ...patch },
+    }),
+  moveLead: (docId: string, id: string, stage: LeadStage) =>
+    mutate("LeadFunnel", "moveLead", "docId: $docId, input: $input", {
+      docId,
+      input: { id, stage, updatedAt: new Date().toISOString() },
+    }),
+  deleteLead: (docId: string, id: string) =>
+    mutate("LeadFunnel", "deleteLead", "docId: $docId, input: $input", {
+      docId,
+      input: { id },
+    }),
+  addActivity: (
+    docId: string,
+    leadId: string,
+    input: { type: "CALL" | "EMAIL" | "MEETING" | "NOTE"; note: string | null },
+  ) =>
+    mutate("LeadFunnel", "addActivity", "docId: $docId, input: $input", {
+      docId,
+      input: { leadId, id: randomId(), timestamp: new Date().toISOString(), ...input },
     }),
 };

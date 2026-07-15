@@ -77,3 +77,49 @@ export interface WorkspaceClient {
   name: string;
   status: EntityStatus;
 }
+
+/* -------------------------------- sales -------------------------------- */
+
+export type LeadStage =
+  | "NEW"
+  | "CONTACTED"
+  | "QUALIFIED"
+  | "PROPOSAL"
+  | "NEGOTIATION"
+  | "WON"
+  | "LOST";
+export type LeadSource =
+  | "WEBSITE"
+  | "REFERRAL"
+  | "COLD_OUTREACH"
+  | "EVENT"
+  | "SOCIAL"
+  | "OTHER";
+export type LeadPriority = "LOW" | "MEDIUM" | "HIGH";
+export type ActivityType = "CALL" | "EMAIL" | "MEETING" | "NOTE";
+
+export interface LeadActivity {
+  id: string;
+  type: ActivityType;
+  note: string | null;
+  timestamp: string;
+}
+
+export interface Lead {
+  id: string;
+  name: string;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+  source: LeadSource;
+  stage: LeadStage;
+  priority: LeadPriority;
+  estimatedValue: number | null;
+  owner: string | null;
+  score: number;
+  tags: string[];
+  notes: string | null;
+  activities: LeadActivity[];
+  createdAt: string;
+  updatedAt: string;
+}

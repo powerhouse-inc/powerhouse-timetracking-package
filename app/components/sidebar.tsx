@@ -24,6 +24,10 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
     items: [{ href: "/reports", label: "Reports", icon: "▿" }],
   },
   {
+    heading: "Sales",
+    items: [{ href: "/sales", label: "Pipeline", icon: "◈" }],
+  },
+  {
     heading: "Manage",
     items: [
       { href: "/projects", label: "Projects", icon: "▦", managerial: true },
