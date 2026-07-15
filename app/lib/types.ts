@@ -214,6 +214,14 @@ export interface InvoiceLineItem {
   totalPriceTaxIncl: number;
 }
 
+export interface InvoicePayment {
+  id: string;
+  paymentDate: string | null;
+  txnRef: string | null;
+  confirmed: boolean;
+  amount: number | null;
+}
+
 export interface InvoiceDoc {
   id: string;
   name: string;
@@ -225,6 +233,7 @@ export interface InvoiceDoc {
   issuerName: string | null;
   payerName: string | null;
   lineItems: InvoiceLineItem[];
+  payments: InvoicePayment[];
   totalPriceTaxExcl: number;
   totalPriceTaxIncl: number;
   notes: string | null;

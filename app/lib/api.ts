@@ -686,6 +686,7 @@ const INVOICES_QUERY = `
                 id description taxPercent quantity currency
                 unitPriceTaxExcl unitPriceTaxIncl totalPriceTaxExcl totalPriceTaxIncl
               }
+              payments { id paymentDate txnRef confirmed amount }
             }
           }
         }
@@ -710,6 +711,7 @@ interface InvoiceItem {
       issuer: { name: string | null } | null;
       payer: { name: string | null } | null;
       lineItems: InvoiceLineItem[];
+      payments: InvoiceDoc["payments"];
     };
   };
 }
@@ -731,6 +733,7 @@ export async function fetchInvoices(): Promise<InvoiceDoc[]> {
       issuerName: g.issuer?.name ?? null,
       payerName: g.payer?.name ?? null,
       lineItems: g.lineItems,
+      payments: g.payments,
       totalPriceTaxExcl: g.totalPriceTaxExcl,
       totalPriceTaxIncl: g.totalPriceTaxIncl,
       notes: g.notes,
@@ -824,6 +827,22 @@ export const invoiceApi = {
       docId,
       input: { id },
     }),
+  /** Record a confirmed payment and mark the invoice received. */
+  recordPayment: async (docId: string, txnRef: string) => {
+    await mutate("Invoice", "addPayment", "docId: $docId, input: $input", {
+      docId,
+      input: {
+        id: randomId(),
+        paymentDate: new Date().toISOString(),
+        txnRef: txnRef || null,
+        confirmed: true,
+      },
+    });
+    await mutate("Invoice", "editStatus", "docId: $docId, input: $input", {
+      docId,
+      input: { status: "PAYMENTRECEIVED" },
+    });
+  },
 };
 
 const STATEMENTS_QUERY = `

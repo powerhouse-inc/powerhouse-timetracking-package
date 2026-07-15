@@ -75,6 +75,13 @@ export function InvoicesView() {
           </div>
           {list.map((inv) => {
             const meta = statusMeta(INVOICE_STATUS, inv.status);
+            const today = new Date().toISOString().slice(0, 10);
+            const overdue =
+              !!inv.dateDue &&
+              inv.dateDue < today &&
+              !["PAYMENTRECEIVED", "PAYMENTCLOSED", "CANCELLED", "REJECTED"].includes(
+                inv.status,
+              );
             return (
               <button
                 key={inv.id}
@@ -93,11 +100,18 @@ export function InvoicesView() {
                 <span className="text-mist-200">
                   {formatAmount(inv.totalPriceTaxIncl, inv.currency)}
                 </span>
-                <span
-                  className="tt-chip w-fit"
-                  style={{ background: `${meta.color}22`, color: meta.color }}
-                >
-                  {meta.label}
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className="tt-chip w-fit"
+                    style={{ background: `${meta.color}22`, color: meta.color }}
+                  >
+                    {meta.label}
+                  </span>
+                  {overdue && (
+                    <span className="tt-chip bg-red-500/15 text-red-300">
+                      Overdue
+                    </span>
+                  )}
                 </span>
               </button>
             );
@@ -212,6 +226,7 @@ function InvoiceDetail({
   const [qty, setQty] = useState("1");
   const [price, setPrice] = useState("");
   const [tax, setTax] = useState("0");
+  const [payRef, setPayRef] = useState("");
 
   const prefill = async () => {
     const client = (workspace?.clients ?? []).find(
@@ -371,6 +386,50 @@ function InvoiceDetail({
               />
               <button className="tt-btn-primary" onClick={addItem}>
                 Add
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="tt-label">Payments</label>
+            <div className="tt-card divide-y divide-ink-600/40">
+              {invoice.payments.length === 0 && (
+                <div className="px-4 py-3 text-sm text-mist-400">
+                  No payments recorded.
+                </div>
+              )}
+              {invoice.payments.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between px-4 py-2 text-sm"
+                >
+                  <span className="text-mist-200">
+                    {p.confirmed ? "✓ Confirmed" : "Pending"}
+                    {p.txnRef ? ` · ${p.txnRef}` : ""}
+                  </span>
+                  <span className="text-xs text-mist-400">
+                    {p.paymentDate
+                      ? new Date(p.paymentDate).toLocaleDateString()
+                      : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                className="tt-input flex-1"
+                placeholder="Transaction reference"
+                value={payRef}
+                onChange={(e) => setPayRef(e.target.value)}
+              />
+              <button
+                className="tt-btn-primary"
+                onClick={() => {
+                  run(invoiceApi.recordPayment(invoice.id, payRef.trim()));
+                  setPayRef("");
+                }}
+              >
+                Record payment
               </button>
             </div>
           </div>
