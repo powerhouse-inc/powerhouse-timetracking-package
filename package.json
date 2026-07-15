@@ -82,6 +82,7 @@
     "@powerhousedao/document-engineering": "1.40.5",
     "@powerhousedao/ph-cli": "6.2.0-dev.13",
     "@powerhousedao/reactor": "6.2.0-dev.13",
+    "@powerhousedao/reactor-api": "6.2.0-dev.13",
     "@powerhousedao/reactor-browser": "6.2.0-dev.13",
     "@powerhousedao/shared": "6.2.0-dev.13",
     "@tailwindcss/cli": "^4.1.18",
