@@ -28,7 +28,15 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
   ] },
   {
     heading: "Analyze",
-    items: [{ href: "/reports", label: "Reports", icon: "▿" }],
+    items: [
+      { href: "/reports", label: "Reports", icon: "▿" },
+      {
+        href: "/profitability",
+        label: "Profitability",
+        icon: "◑",
+        managerial: true,
+      },
+    ],
   },
   {
     heading: "Sales",
