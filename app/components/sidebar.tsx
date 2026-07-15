@@ -76,10 +76,15 @@ export function Sidebar() {
     <aside className="relative z-10 flex w-60 flex-none flex-col border-r border-ink-600/60 bg-ink-900/70 backdrop-blur-sm">
       <div className="flex items-center gap-2.5 px-5 py-5">
         <span className="grid size-8 place-items-center rounded-lg bg-magenta text-ink-950 shadow-glow">
-          ⏱
+          ⬡
         </span>
-        <span className="text-[15px] font-extrabold tracking-tight">
-          Powerhouse Time
+        <span className="flex flex-col leading-none">
+          <span className="text-[15px] font-extrabold tracking-tight">
+            Powerhouse
+          </span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-magenta">
+            Operations
+          </span>
         </span>
       </div>
 

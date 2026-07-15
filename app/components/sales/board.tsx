@@ -131,7 +131,7 @@ export function SalesBoard() {
           start your pipeline.
         </EmptyState>
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-4">
+        <div className="flex min-h-[calc(100vh-13rem)] gap-3 overflow-x-auto pb-4">
           {STAGES.map((s) => {
             const items = byStage.get(s.key) ?? [];
             const total = items.reduce(

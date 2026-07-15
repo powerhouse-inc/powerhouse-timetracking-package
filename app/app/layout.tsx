@@ -11,8 +11,8 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Powerhouse Time",
-  description: "Powerhouse-native time tracking",
+  title: "Powerhouse Operations",
+  description: "Sales, delivery, billing and time on your own reactor",
 };
 
 // Read env at request time (not build) so one image works across deployments.

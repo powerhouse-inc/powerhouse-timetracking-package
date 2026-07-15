@@ -34,14 +34,14 @@ export function LoginScreen() {
       <div className="tt-card w-full max-w-md animate-fade-up p-8">
         <div className="mb-6 flex items-center gap-3">
           <span className="grid size-10 place-items-center rounded-xl bg-magenta text-lg text-ink-950 shadow-glow">
-            ⏱
+            ⬡
           </span>
           <div>
             <div className="text-lg font-extrabold tracking-tight">
-              Powerhouse Time
+              Powerhouse Operations
             </div>
             <div className="text-xs text-mist-400">
-              Your team&apos;s time, on your own reactor
+              Sales, delivery &amp; billing on your own reactor
             </div>
           </div>
         </div>

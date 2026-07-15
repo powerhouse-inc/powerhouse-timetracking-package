@@ -22,7 +22,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <div className="relative z-10 flex min-h-screen">
       <Sidebar />
       <main className="flex-1 overflow-x-hidden px-8 py-7">
-        <div className="mx-auto max-w-5xl animate-fade-up">{children}</div>
+        <div className="mx-auto max-w-7xl animate-fade-up">{children}</div>
       </main>
     </div>
   );

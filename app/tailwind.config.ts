@@ -52,7 +52,10 @@ export default {
         },
       },
       animation: {
-        "fade-up": "fade-up .4s cubic-bezier(.2,.7,.2,1) both",
+        // `backwards` (not `both`): the entrance keeps its pre-start frame but
+        // does NOT retain a transform at rest — a lingering translateY(0) would
+        // create a containing block that traps `position: fixed` drawers.
+        "fade-up": "fade-up .4s cubic-bezier(.2,.7,.2,1) backwards",
         "pulse-ring": "pulse-ring 1.6s ease-out infinite",
         "pulse-line": "pulse-line 2s ease-in-out infinite",
       },
