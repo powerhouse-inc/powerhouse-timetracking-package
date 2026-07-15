@@ -92,7 +92,25 @@ export function SowDetail({ sow }: { sow: ScopeOfWorkDoc }) {
               return (
                 <div key={h.projectId} className="px-5 py-3">
                   <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="font-medium text-mist-100">{h.title}</span>
+                    <span className="flex items-center gap-2 font-medium text-mist-100">
+                      {h.title}
+                      {h.matchedBy === "name" && (
+                        <span
+                          className="tt-chip bg-amber-400/15 text-amber-300"
+                          title="Tracked hours matched by name — link a workspace project below to make this reliable."
+                        >
+                          ~ name match
+                        </span>
+                      )}
+                      {h.matchedBy === "none" && (
+                        <span
+                          className="tt-chip bg-ink-600 text-mist-400"
+                          title="No linked or matching workspace project, so no tracked hours."
+                        >
+                          ⚠ unlinked
+                        </span>
+                      )}
+                    </span>
                     <span className={over ? "text-red-400" : "text-mist-300"}>
                       {h.trackedHours.toFixed(1)}h /{" "}
                       {h.budgetedHours.toFixed(0)}h budgeted
@@ -218,14 +236,26 @@ export function SowDetail({ sow }: { sow: ScopeOfWorkDoc }) {
           {sow.projects.map((p) => (
             <div
               key={p.id}
-              className="flex items-center justify-between px-5 py-3 text-sm"
+              className="flex items-center justify-between gap-3 px-5 py-3 text-sm"
             >
-              <span className="text-mist-100">
+              <span className="min-w-0 truncate text-mist-100">
                 <span className="text-mist-400">{p.code}</span> · {p.title}
               </span>
-              <span className="text-mist-400">
-                {p.budget != null ? `${p.budget} ${p.currency ?? ""}` : "—"}
-              </span>
+              <select
+                className="tt-input py-1 text-xs"
+                value={p.workspaceProjectId ?? ""}
+                onChange={(e) =>
+                  run(sowApi.linkProject(sow.id, p.id, e.target.value || null))
+                }
+                title="Link to a workspace project (drives reliable tracked-hours)"
+              >
+                <option value="">Link workspace project…</option>
+                {(workspace?.projects ?? []).map((wp) => (
+                  <option key={wp.localId} value={wp.localId}>
+                    {wp.name}
+                  </option>
+                ))}
+              </select>
             </div>
           ))}
         </div>

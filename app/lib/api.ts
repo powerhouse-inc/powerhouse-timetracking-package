@@ -369,7 +369,7 @@ const LEAD_FUNNELS_QUERY = `
             global {
               name
               leads {
-                id name company email phone source stage priority
+                id name company clientId email phone source stage priority
                 estimatedValue owner score tags notes createdAt updatedAt
                 activities { id type note timestamp }
               }
@@ -416,6 +416,7 @@ export async function ensureLeadFunnel(name: string): Promise<string> {
 export interface NewLeadInput {
   name: string;
   company: string | null;
+  clientId: string | null;
   email: string | null;
   phone: string | null;
   source: LeadSource;
@@ -508,7 +509,7 @@ const SCOPES_QUERY = `
           state {
             global {
               title description status
-              projects { id code title budget currency budgetType }
+              projects { id code title workspaceProjectId budget currency budgetType }
               deliverables {
                 id title code description status
                 budgetAnchor { project unit unitCost quantity margin }
@@ -584,6 +585,11 @@ export const sowApi = {
     mutate("ScopeOfWork", "addProject", "docId: $docId, input: $input", {
       docId,
       input: { id: randomId(), ...input },
+    }),
+  linkProject: (docId: string, projectId: string, workspaceProjectId: string | null) =>
+    mutate("ScopeOfWork", "updateProject", "docId: $docId, input: $input", {
+      docId,
+      input: { id: projectId, workspaceProjectId },
     }),
   setProjectTotalBudget: (docId: string, projectId: string, totalBudget: number) =>
     mutate("ScopeOfWork", "setProjectTotalBudget", "docId: $docId, input: $input", {

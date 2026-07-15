@@ -43,42 +43,51 @@ export interface ProjectHours {
   title: string;
   budgetedHours: number;
   trackedHours: number;
+  /** how tracked hours were sourced: a real id link, a name fallback, or none */
+  matchedBy: "id" | "name" | "none";
 }
 
-/** Tracked hours per workspace project name (lowercased), summed from all timesheets. */
-function trackedHoursByProjectName(
+interface TrackedHours {
+  byId: Map<string, number>;
+  byName: Map<string, number>;
+}
+
+function trackedHours(
   timesheets: TimesheetDoc[],
   workspaceProjects: WorkspaceProject[],
-): Map<string, number> {
+): TrackedHours {
   const nameById = new Map(
     workspaceProjects.map((p) => [p.localId, p.name.toLowerCase()]),
   );
+  const byId = new Map<string, number>();
   const byName = new Map<string, number>();
   for (const sheet of timesheets) {
     for (const e of sheet.entries) {
       if (!e.projectId) continue;
-      const name = nameById.get(e.projectId);
-      if (!name) continue;
       const hours =
         (new Date(e.end).getTime() - new Date(e.start).getTime()) / 3_600_000;
       if (!Number.isFinite(hours) || hours <= 0) continue;
-      byName.set(name, (byName.get(name) ?? 0) + hours);
+      byId.set(e.projectId, (byId.get(e.projectId) ?? 0) + hours);
+      const name = nameById.get(e.projectId);
+      if (name) byName.set(name, (byName.get(name) ?? 0) + hours);
     }
   }
-  return byName;
+  return { byId, byName };
 }
 
 /**
  * The flagship join: budgeted hours (from SoW deliverables anchored in Hours)
- * vs tracked hours (from timesheets). SoW projects are matched to workspace
- * projects by name/code, since the two live in separate documents.
+ * vs tracked hours (from timesheets). Prefers the explicit `workspaceProjectId`
+ * link; falls back to matching by project name/code and flags when a SoW
+ * project has no workspace counterpart at all.
  */
 export function computeProjectHours(
   sow: ScopeOfWorkDoc,
   workspaceProjects: WorkspaceProject[],
   timesheets: TimesheetDoc[],
 ): ProjectHours[] {
-  const tracked = trackedHoursByProjectName(timesheets, workspaceProjects);
+  const tracked = trackedHours(timesheets, workspaceProjects);
+  const wsIds = new Set(workspaceProjects.map((p) => p.localId));
 
   const budgetedByProject = new Map<string, number>();
   for (const d of sow.deliverables) {
@@ -91,15 +100,27 @@ export function computeProjectHours(
   }
 
   return sow.projects.map((p) => {
-    const key = [p.title.toLowerCase(), p.code.toLowerCase()].find((k) =>
-      tracked.has(k),
-    );
+    let trackedH = 0;
+    let matchedBy: ProjectHours["matchedBy"] = "none";
+    if (p.workspaceProjectId && wsIds.has(p.workspaceProjectId)) {
+      trackedH = tracked.byId.get(p.workspaceProjectId) ?? 0;
+      matchedBy = "id";
+    } else {
+      const key = [p.title.toLowerCase(), p.code.toLowerCase()].find((k) =>
+        tracked.byName.has(k),
+      );
+      if (key) {
+        trackedH = tracked.byName.get(key) ?? 0;
+        matchedBy = "name";
+      }
+    }
     return {
       projectId: p.id,
       code: p.code,
       title: p.title,
       budgetedHours: budgetedByProject.get(p.id) ?? 0,
-      trackedHours: key ? (tracked.get(key) ?? 0) : 0,
+      trackedHours: trackedH,
+      matchedBy,
     };
   });
 }

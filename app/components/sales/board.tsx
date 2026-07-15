@@ -22,9 +22,11 @@ export function SalesBoard() {
   const docId = funnel?.id ?? null;
   const leads = funnel?.leads ?? [];
 
-  const clientNames = useMemo(
-    () => (workspace?.clients ?? []).map((c) => c.name),
-    [workspace],
+  const clients = useMemo(() => workspace?.clients ?? [], [workspace]);
+  const clientNames = useMemo(() => clients.map((c) => c.name), [clients]);
+  const clientIdByName = useMemo(
+    () => new Map(clients.map((c) => [c.name.toLowerCase(), c.localId])),
+    [clients],
   );
   const memberNames = useMemo(
     () => (workspace?.members ?? []).map((m) => m.name),
@@ -89,7 +91,11 @@ export function SalesBoard() {
           onCancel={() => setAdding(false)}
           onCreate={async (input) => {
             const id = await ensureDoc();
-            await leadApi.addLead(id, input);
+            await leadApi.addLead(id, {
+              ...input,
+              clientId:
+                clientIdByName.get((input.company ?? "").toLowerCase()) ?? null,
+            });
             refresh();
             setAdding(false);
           }}
@@ -163,6 +169,7 @@ export function SalesBoard() {
           lead={openLead}
           docId={docId}
           clientNames={clientNames}
+          clientIdByName={clientIdByName}
           memberNames={memberNames}
           onClose={() => setOpenId(null)}
           onChange={refresh}
@@ -236,6 +243,7 @@ function AddLeadForm({
     await onCreate({
       name: name.trim(),
       company: company.trim() || null,
+      clientId: null,
       email: null,
       phone: null,
       source: "OTHER",

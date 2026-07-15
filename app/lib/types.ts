@@ -109,6 +109,7 @@ export interface Lead {
   id: string;
   name: string;
   company: string | null;
+  clientId: string | null;
   email: string | null;
   phone: string | null;
   source: LeadSource;
@@ -169,6 +170,7 @@ export interface SowProject {
   id: string;
   code: string;
   title: string;
+  workspaceProjectId: string | null;
   budget: number | null;
   currency: string | null;
   budgetType: string | null;

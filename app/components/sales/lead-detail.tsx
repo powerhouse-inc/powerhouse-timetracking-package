@@ -17,6 +17,7 @@ export function LeadDetail({
   lead,
   docId,
   clientNames,
+  clientIdByName,
   memberNames,
   onClose,
   onChange,
@@ -24,6 +25,7 @@ export function LeadDetail({
   lead: Lead;
   docId: string;
   clientNames: string[];
+  clientIdByName: Map<string, string>;
   memberNames: string[];
   onClose: () => void;
   onChange: () => void;
@@ -115,7 +117,15 @@ export function LeadDetail({
                 className="tt-input w-full"
                 list="lead-clients"
                 defaultValue={lead.company ?? ""}
-                onBlur={(e) => patch({ company: e.target.value.trim() || null })}
+                onBlur={(e) => {
+                  const company = e.target.value.trim() || null;
+                  patch({
+                    company,
+                    clientId: company
+                      ? clientIdByName.get(company.toLowerCase()) ?? null
+                      : null,
+                  });
+                }}
               />
               <datalist id="lead-clients">
                 {clientNames.map((c) => (
