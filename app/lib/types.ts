@@ -272,3 +272,79 @@ export interface BillingStatementDoc {
   lineItems: BillingLineItem[];
   notes: string | null;
 }
+
+/* ------------------------------- finance ------------------------------- */
+
+export type AccountType = "Source" | "Internal" | "Destination" | "External";
+export type KycAmlStatus = "PASSED" | "PENDING" | "FAILED";
+export type ExpenseReportStatus = "DRAFT" | "REVIEW" | "FINAL";
+export type TransactionDirection = "INFLOW" | "OUTFLOW";
+
+/** An entry in an Accounts registry document. */
+export interface AccountEntry {
+  id: string;
+  account: string;
+  name: string;
+  budgetPath: string | null;
+  accountTransactionsId: string | null;
+  chain: string[];
+  type: AccountType;
+  owners: string[];
+  kycAmlStatus: KycAmlStatus | null;
+}
+
+export interface AccountTransaction {
+  id: string;
+  counterParty: string | null;
+  /** Raw Amount_Currency value — format with formatAmountCurrency(). */
+  amount: unknown;
+  datetime: string;
+  txHash: string;
+  token: string | null;
+  blockNumber: number | null;
+  budget: string | null;
+  accountingPeriod: string;
+  direction: TransactionDirection;
+}
+
+/** An AccountTransactions document: one account plus its ledger. */
+export interface AccountTransactionsDoc {
+  id: string;
+  name: string;
+  account: {
+    id: string;
+    account: string;
+    name: string;
+    type: string | null;
+    chain: string[];
+    owners: string[];
+    kycAmlStatus: string | null;
+  };
+  transactions: AccountTransaction[];
+}
+
+export interface ExpenseReportDoc {
+  id: string;
+  name: string;
+  status: ExpenseReportStatus;
+  periodStart: string | null;
+  periodEnd: string | null;
+  walletCount: number;
+  totalBudget: number;
+  totalActuals: number;
+  totalForecast: number;
+  totalPayments: number;
+}
+
+export interface SnapshotReportDoc {
+  id: string;
+  name: string;
+  reportName: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  accountCount: number;
+  /** Sum of INFLOW transaction amounts across all snapshot accounts. */
+  netInflow: number;
+  /** Sum of OUTFLOW transaction amounts across all snapshot accounts. */
+  netOutflow: number;
+}

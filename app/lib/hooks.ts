@@ -2,10 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  fetchAccounts,
+  fetchAccountTransactions,
   fetchBillingStatements,
+  fetchExpenseReports,
   fetchInvoices,
   fetchLeadFunnel,
   fetchScopesOfWork,
+  fetchSnapshotReports,
   fetchTimesheets,
   fetchWorkspace,
   type LeadFunnelDoc,
@@ -13,10 +17,14 @@ import {
   type WorkspaceDoc,
 } from "./api";
 import type {
+  AccountEntry,
+  AccountTransactionsDoc,
   BillingStatementDoc,
+  ExpenseReportDoc,
   InvoiceDoc,
   Role,
   ScopeOfWorkDoc,
+  SnapshotReportDoc,
 } from "./types";
 
 export function useWorkspace() {
@@ -80,6 +88,38 @@ export function useBillingStatements() {
   return useQuery<BillingStatementDoc[]>({
     queryKey: ["billingStatements"],
     queryFn: fetchBillingStatements,
+    refetchInterval: 4000,
+  });
+}
+
+export function useAccounts() {
+  return useQuery<AccountEntry[]>({
+    queryKey: ["accounts"],
+    queryFn: fetchAccounts,
+    refetchInterval: 4000,
+  });
+}
+
+export function useAccountTransactions() {
+  return useQuery<AccountTransactionsDoc[]>({
+    queryKey: ["accountTransactions"],
+    queryFn: fetchAccountTransactions,
+    refetchInterval: 4000,
+  });
+}
+
+export function useExpenseReports() {
+  return useQuery<ExpenseReportDoc[]>({
+    queryKey: ["expenseReports"],
+    queryFn: fetchExpenseReports,
+    refetchInterval: 4000,
+  });
+}
+
+export function useSnapshotReports() {
+  return useQuery<SnapshotReportDoc[]>({
+    queryKey: ["snapshotReports"],
+    queryFn: fetchSnapshotReports,
     refetchInterval: 4000,
   });
 }

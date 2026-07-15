@@ -1,11 +1,17 @@
 import { DRIVE_ID } from "./config";
 import { gql } from "./gql";
+import { amountToNumber } from "./finance";
 import type {
+  AccountEntry,
+  AccountTransaction,
+  AccountTransactionsDoc,
   BillingLineItem,
   BillingStatementDoc,
   BillingStatementStatus,
   BillingUnit,
   DeliverableStatus,
+  ExpenseReportDoc,
+  ExpenseReportStatus,
   InvoiceDoc,
   InvoiceLineItem,
   InvoiceStatus,
@@ -15,9 +21,11 @@ import type {
   LeadStage,
   Role,
   ScopeOfWorkDoc,
+  SnapshotReportDoc,
   SowDeliverable,
   SowProject,
   SowStatus,
+  TransactionDirection,
   WorkspaceClient,
   WorkspaceMember,
   WorkspaceProject,
@@ -966,3 +974,291 @@ export const statementApi = {
       input: { id },
     }),
 };
+
+/* ============================== finance =============================== */
+/* Read-only surfacing of the billing/accounting document models. */
+
+const ACCOUNTS_QUERY = `
+  query {
+    Accounts {
+      documents {
+        items {
+          id name
+          state {
+            global {
+              accounts {
+                id account name budgetPath accountTransactionsId
+                chain type owners KycAmlStatus
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+interface AccountEntryRaw {
+  id: string;
+  account: string;
+  name: string;
+  budgetPath: string | null;
+  accountTransactionsId: string | null;
+  chain: string[] | null;
+  type: AccountEntry["type"];
+  owners: string[] | null;
+  KycAmlStatus: AccountEntry["kycAmlStatus"];
+}
+
+interface AccountsItem {
+  id: string;
+  name: string;
+  state: { global: { accounts: AccountEntryRaw[] } };
+}
+
+/** Flatten every AccountEntry across all Accounts registry documents. */
+export async function fetchAccounts(): Promise<AccountEntry[]> {
+  const data = await gql<{ Accounts: { documents: { items: AccountsItem[] } } }>(
+    ACCOUNTS_QUERY,
+  );
+  return data.Accounts.documents.items.flatMap((d) =>
+    d.state.global.accounts.map((a) => ({
+      id: a.id,
+      account: a.account,
+      name: a.name,
+      budgetPath: a.budgetPath ?? null,
+      accountTransactionsId: a.accountTransactionsId ?? null,
+      chain: a.chain ?? [],
+      type: a.type,
+      owners: a.owners ?? [],
+      kycAmlStatus: a.KycAmlStatus ?? null,
+    })),
+  );
+}
+
+const ACCOUNT_TRANSACTIONS_QUERY = `
+  query {
+    AccountTransactions {
+      documents {
+        items {
+          id name
+          state {
+            global {
+              account { id account name type chain owners KycAmlStatus }
+              transactions {
+                id counterParty amount datetime budget accountingPeriod direction
+                details { txHash token blockNumber }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+interface AccountTransactionRaw {
+  id: string;
+  counterParty: string | null;
+  amount: unknown;
+  datetime: string;
+  budget: string | null;
+  accountingPeriod: string;
+  direction: TransactionDirection;
+  details: { txHash: string; token: string | null; blockNumber: number | null } | null;
+}
+
+interface AccountTransactionsItem {
+  id: string;
+  name: string;
+  state: {
+    global: {
+      account: {
+        id: string;
+        account: string;
+        name: string;
+        type: string | null;
+        chain: string[] | null;
+        owners: string[] | null;
+        KycAmlStatus: string | null;
+      };
+      transactions: AccountTransactionRaw[];
+    };
+  };
+}
+
+export async function fetchAccountTransactions(): Promise<AccountTransactionsDoc[]> {
+  const data = await gql<{
+    AccountTransactions: { documents: { items: AccountTransactionsItem[] } };
+  }>(ACCOUNT_TRANSACTIONS_QUERY);
+  return data.AccountTransactions.documents.items.map((d) => {
+    const g = d.state.global;
+    const transactions: AccountTransaction[] = g.transactions.map((t) => ({
+      id: t.id,
+      counterParty: t.counterParty ?? null,
+      amount: t.amount,
+      datetime: t.datetime,
+      txHash: t.details?.txHash ?? "",
+      token: t.details?.token ?? null,
+      blockNumber: t.details?.blockNumber ?? null,
+      budget: t.budget ?? null,
+      accountingPeriod: t.accountingPeriod,
+      direction: t.direction,
+    }));
+    return {
+      id: d.id,
+      name: d.name,
+      account: {
+        id: g.account.id,
+        account: g.account.account,
+        name: g.account.name,
+        type: g.account.type ?? null,
+        chain: g.account.chain ?? [],
+        owners: g.account.owners ?? [],
+        kycAmlStatus: g.account.KycAmlStatus ?? null,
+      },
+      transactions,
+    };
+  });
+}
+
+const EXPENSE_REPORTS_QUERY = `
+  query {
+    ExpenseReport {
+      documents {
+        items {
+          id name
+          state {
+            global {
+              status periodStart periodEnd
+              wallets {
+                wallet
+                totals { group totalBudget totalForecast totalActuals totalPayments }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+interface GroupTotalsRaw {
+  group: string | null;
+  totalBudget: number | null;
+  totalForecast: number | null;
+  totalActuals: number | null;
+  totalPayments: number | null;
+}
+
+interface ExpenseReportItem {
+  id: string;
+  name: string;
+  state: {
+    global: {
+      status: ExpenseReportStatus;
+      periodStart: string | null;
+      periodEnd: string | null;
+      wallets: { wallet: string | null; totals: (GroupTotalsRaw | null)[] | null }[];
+    };
+  };
+}
+
+export async function fetchExpenseReports(): Promise<ExpenseReportDoc[]> {
+  const data = await gql<{
+    ExpenseReport: { documents: { items: ExpenseReportItem[] } };
+  }>(EXPENSE_REPORTS_QUERY);
+  return data.ExpenseReport.documents.items.map((d) => {
+    const g = d.state.global;
+    let totalBudget = 0;
+    let totalActuals = 0;
+    let totalForecast = 0;
+    let totalPayments = 0;
+    for (const w of g.wallets) {
+      for (const t of w.totals ?? []) {
+        if (!t) continue;
+        totalBudget += t.totalBudget ?? 0;
+        totalActuals += t.totalActuals ?? 0;
+        totalForecast += t.totalForecast ?? 0;
+        totalPayments += t.totalPayments ?? 0;
+      }
+    }
+    return {
+      id: d.id,
+      name: d.name,
+      status: g.status,
+      periodStart: g.periodStart ?? null,
+      periodEnd: g.periodEnd ?? null,
+      walletCount: g.wallets.length,
+      totalBudget,
+      totalActuals,
+      totalForecast,
+      totalPayments,
+    };
+  });
+}
+
+const SNAPSHOT_REPORTS_QUERY = `
+  query {
+    SnapshotReport {
+      documents {
+        items {
+          id name
+          state {
+            global {
+              reportName reportPeriodStart reportPeriodEnd
+              snapshotAccounts {
+                id
+                transactions { id amount direction }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+interface SnapshotReportItem {
+  id: string;
+  name: string;
+  state: {
+    global: {
+      reportName: string | null;
+      reportPeriodStart: string | null;
+      reportPeriodEnd: string | null;
+      snapshotAccounts: {
+        id: string;
+        transactions: { id: string; amount: unknown; direction: TransactionDirection }[];
+      }[];
+    };
+  };
+}
+
+export async function fetchSnapshotReports(): Promise<SnapshotReportDoc[]> {
+  const data = await gql<{
+    SnapshotReport: { documents: { items: SnapshotReportItem[] } };
+  }>(SNAPSHOT_REPORTS_QUERY);
+  return data.SnapshotReport.documents.items.map((d) => {
+    const g = d.state.global;
+    let netInflow = 0;
+    let netOutflow = 0;
+    for (const acc of g.snapshotAccounts) {
+      for (const t of acc.transactions) {
+        const n = amountToNumber(t.amount);
+        if (t.direction === "INFLOW") netInflow += n;
+        else netOutflow += n;
+      }
+    }
+    return {
+      id: d.id,
+      name: d.name,
+      reportName: g.reportName ?? null,
+      periodStart: g.reportPeriodStart ?? null,
+      periodEnd: g.reportPeriodEnd ?? null,
+      accountCount: g.snapshotAccounts.length,
+      netInflow,
+      netOutflow,
+    };
+  });
+}
