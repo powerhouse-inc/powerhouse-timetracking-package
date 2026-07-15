@@ -2,6 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  fetchBillingStatements,
+  fetchInvoices,
   fetchLeadFunnel,
   fetchScopesOfWork,
   fetchTimesheets,
@@ -10,7 +12,12 @@ import {
   type TimesheetDoc,
   type WorkspaceDoc,
 } from "./api";
-import type { Role, ScopeOfWorkDoc } from "./types";
+import type {
+  BillingStatementDoc,
+  InvoiceDoc,
+  Role,
+  ScopeOfWorkDoc,
+} from "./types";
 
 export function useWorkspace() {
   return useQuery<WorkspaceDoc | null>({
@@ -61,6 +68,22 @@ export function useScopesOfWork() {
   });
 }
 
+export function useInvoices() {
+  return useQuery<InvoiceDoc[]>({
+    queryKey: ["invoices"],
+    queryFn: fetchInvoices,
+    refetchInterval: 4000,
+  });
+}
+
+export function useBillingStatements() {
+  return useQuery<BillingStatementDoc[]>({
+    queryKey: ["billingStatements"],
+    queryFn: fetchBillingStatements,
+    refetchInterval: 4000,
+  });
+}
+
 /** Invalidate the read queries after a mutation so the UI reflects changes fast. */
 export function useRefresh() {
   const qc = useQueryClient();
@@ -69,6 +92,8 @@ export function useRefresh() {
     void qc.invalidateQueries({ queryKey: ["workspace"] });
     void qc.invalidateQueries({ queryKey: ["leadFunnel"] });
     void qc.invalidateQueries({ queryKey: ["scopesOfWork"] });
+    void qc.invalidateQueries({ queryKey: ["invoices"] });
+    void qc.invalidateQueries({ queryKey: ["billingStatements"] });
   };
 }
 

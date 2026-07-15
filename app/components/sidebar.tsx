@@ -32,6 +32,13 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
     items: [{ href: "/delivery", label: "Scopes of Work", icon: "◫" }],
   },
   {
+    heading: "Billing",
+    items: [
+      { href: "/invoices", label: "Invoices", icon: "▤", managerial: true },
+      { href: "/statements", label: "Statements", icon: "▥", managerial: true },
+    ],
+  },
+  {
     heading: "Manage",
     items: [
       { href: "/projects", label: "Projects", icon: "▦", managerial: true },

@@ -183,3 +183,79 @@ export interface ScopeOfWorkDoc {
   projects: SowProject[];
   deliverables: SowDeliverable[];
 }
+
+/* ------------------------------- billing ------------------------------- */
+
+export type InvoiceStatus =
+  | "DRAFT"
+  | "ISSUED"
+  | "CANCELLED"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "PAYMENTSCHEDULED"
+  | "PAYMENTSENT"
+  | "PAYMENTISSUE"
+  | "PAYMENTRECEIVED"
+  | "PAYMENTCLOSED";
+
+export interface InvoiceLineItem {
+  id: string;
+  description: string;
+  taxPercent: number;
+  quantity: number;
+  currency: string;
+  unitPriceTaxExcl: number;
+  unitPriceTaxIncl: number;
+  totalPriceTaxExcl: number;
+  totalPriceTaxIncl: number;
+}
+
+export interface InvoiceDoc {
+  id: string;
+  name: string;
+  status: InvoiceStatus;
+  invoiceNo: string;
+  currency: string;
+  dateIssued: string | null;
+  dateDue: string | null;
+  issuerName: string | null;
+  payerName: string | null;
+  lineItems: InvoiceLineItem[];
+  totalPriceTaxExcl: number;
+  totalPriceTaxIncl: number;
+  notes: string | null;
+}
+
+export type BillingStatementStatus =
+  | "DRAFT"
+  | "ISSUED"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "PAID";
+
+export type BillingUnit = "MINUTE" | "HOUR" | "DAY" | "UNIT";
+
+export interface BillingLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit: BillingUnit;
+  unitPriceCash: number;
+  unitPricePwt: number;
+  totalPriceCash: number;
+  totalPricePwt: number;
+}
+
+export interface BillingStatementDoc {
+  id: string;
+  name: string;
+  contributor: string | null;
+  status: BillingStatementStatus;
+  currency: string;
+  dateIssued: string | null;
+  dateDue: string | null;
+  totalCash: number;
+  totalPowt: number;
+  lineItems: BillingLineItem[];
+  notes: string | null;
+}

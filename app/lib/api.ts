@@ -1,7 +1,14 @@
 import { DRIVE_ID } from "./config";
 import { gql } from "./gql";
 import type {
+  BillingLineItem,
+  BillingStatementDoc,
+  BillingStatementStatus,
+  BillingUnit,
   DeliverableStatus,
+  InvoiceDoc,
+  InvoiceLineItem,
+  InvoiceStatus,
   Lead,
   LeadPriority,
   LeadSource,
@@ -619,4 +626,284 @@ export const sowApi = {
         input: { deliverableId, unit: "Hours", margin: 0, ...input },
       },
     ),
+};
+
+/* ============================== billing =============================== */
+
+const INVOICES_QUERY = `
+  query {
+    Invoice {
+      documents {
+        items {
+          id name
+          state {
+            global {
+              status invoiceNo currency dateIssued dateDue notes
+              totalPriceTaxExcl totalPriceTaxIncl
+              issuer { name }
+              payer { name }
+              lineItems {
+                id description taxPercent quantity currency
+                unitPriceTaxExcl unitPriceTaxIncl totalPriceTaxExcl totalPriceTaxIncl
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+interface InvoiceItem {
+  id: string;
+  name: string;
+  state: {
+    global: {
+      status: InvoiceStatus;
+      invoiceNo: string;
+      currency: string;
+      dateIssued: string | null;
+      dateDue: string | null;
+      notes: string | null;
+      totalPriceTaxExcl: number;
+      totalPriceTaxIncl: number;
+      issuer: { name: string | null } | null;
+      payer: { name: string | null } | null;
+      lineItems: InvoiceLineItem[];
+    };
+  };
+}
+
+export async function fetchInvoices(): Promise<InvoiceDoc[]> {
+  const data = await gql<{ Invoice: { documents: { items: InvoiceItem[] } } }>(
+    INVOICES_QUERY,
+  );
+  return data.Invoice.documents.items.map((d) => {
+    const g = d.state.global;
+    return {
+      id: d.id,
+      name: d.name,
+      status: g.status,
+      invoiceNo: g.invoiceNo,
+      currency: g.currency,
+      dateIssued: g.dateIssued,
+      dateDue: g.dateDue,
+      issuerName: g.issuer?.name ?? null,
+      payerName: g.payer?.name ?? null,
+      lineItems: g.lineItems,
+      totalPriceTaxExcl: g.totalPriceTaxExcl,
+      totalPriceTaxIncl: g.totalPriceTaxIncl,
+      notes: g.notes,
+    };
+  });
+}
+
+export async function createInvoice(input: {
+  invoiceNo: string;
+  currency: string;
+  issuerName: string;
+  payerName: string;
+}): Promise<string> {
+  const data = await gql<{ Invoice: { createDocument: { id: string } } }>(
+    `mutation($name: String!, $parent: String) {
+      Invoice { createDocument(name: $name, parentIdentifier: $parent) { id } }
+    }`,
+    { name: input.invoiceNo || "Invoice", parent: DRIVE_ID },
+  );
+  const id = data.Invoice.createDocument.id;
+  await mutate("Invoice", "editInvoice", "docId: $docId, input: $input", {
+    docId: id,
+    input: { invoiceNo: input.invoiceNo, currency: input.currency },
+  });
+  await mutate("Invoice", "editIssuer", "docId: $docId, input: $input", {
+    docId: id,
+    input: { name: input.issuerName },
+  });
+  await mutate("Invoice", "editPayer", "docId: $docId, input: $input", {
+    docId: id,
+    input: { name: input.payerName },
+  });
+  return id;
+}
+
+export const invoiceApi = {
+  editInvoice: (
+    docId: string,
+    patch: {
+      invoiceNo?: string;
+      currency?: string;
+      dateIssued?: string;
+      dateDue?: string;
+      notes?: string;
+    },
+  ) =>
+    mutate("Invoice", "editInvoice", "docId: $docId, input: $input", {
+      docId,
+      input: patch,
+    }),
+  editParty: (docId: string, side: "issuer" | "payer", name: string) =>
+    mutate(
+      "Invoice",
+      side === "issuer" ? "editIssuer" : "editPayer",
+      "docId: $docId, input: $input",
+      { docId, input: { name } },
+    ),
+  setStatus: (docId: string, status: InvoiceStatus) =>
+    mutate("Invoice", "editStatus", "docId: $docId, input: $input", {
+      docId,
+      input: { status },
+    }),
+  addLineItem: (
+    docId: string,
+    input: {
+      description: string;
+      quantity: number;
+      unitPriceTaxExcl: number;
+      taxPercent: number;
+      currency: string;
+    },
+  ) => {
+    const unitPriceTaxIncl = input.unitPriceTaxExcl * (1 + input.taxPercent / 100);
+    return mutate("Invoice", "addLineItem", "docId: $docId, input: $input", {
+      docId,
+      input: {
+        id: randomId(),
+        description: input.description,
+        taxPercent: input.taxPercent,
+        quantity: input.quantity,
+        currency: input.currency,
+        unitPriceTaxExcl: input.unitPriceTaxExcl,
+        unitPriceTaxIncl,
+        totalPriceTaxExcl: input.unitPriceTaxExcl * input.quantity,
+        totalPriceTaxIncl: unitPriceTaxIncl * input.quantity,
+      },
+    });
+  },
+  deleteLineItem: (docId: string, id: string) =>
+    mutate("Invoice", "deleteLineItem", "docId: $docId, input: $input", {
+      docId,
+      input: { id },
+    }),
+};
+
+const STATEMENTS_QUERY = `
+  query {
+    BillingStatement {
+      documents {
+        items {
+          id name
+          state {
+            global {
+              contributor status currency dateIssued dateDue notes totalCash totalPowt
+              lineItems {
+                id description quantity unit
+                unitPriceCash unitPricePwt totalPriceCash totalPricePwt
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+interface StatementItem {
+  id: string;
+  name: string;
+  state: {
+    global: {
+      contributor: string | null;
+      status: BillingStatementStatus;
+      currency: string;
+      dateIssued: string | null;
+      dateDue: string | null;
+      notes: string | null;
+      totalCash: number;
+      totalPowt: number;
+      lineItems: BillingLineItem[];
+    };
+  };
+}
+
+export async function fetchBillingStatements(): Promise<BillingStatementDoc[]> {
+  const data = await gql<{
+    BillingStatement: { documents: { items: StatementItem[] } };
+  }>(STATEMENTS_QUERY);
+  return data.BillingStatement.documents.items.map((d) => ({
+    id: d.id,
+    name: d.name,
+    ...d.state.global,
+  }));
+}
+
+export async function createBillingStatement(input: {
+  contributor: string;
+  currency: string;
+}): Promise<string> {
+  const data = await gql<{
+    BillingStatement: { createDocument: { id: string } };
+  }>(
+    `mutation($name: String!, $parent: String) {
+      BillingStatement { createDocument(name: $name, parentIdentifier: $parent) { id } }
+    }`,
+    { name: input.contributor || "Billing Statement", parent: DRIVE_ID },
+  );
+  const id = data.BillingStatement.createDocument.id;
+  await mutate("BillingStatement", "editContributor", "docId: $docId, input: $input", {
+    docId: id,
+    input: { contributor: input.contributor },
+  });
+  await mutate(
+    "BillingStatement",
+    "editBillingStatement",
+    "docId: $docId, input: $input",
+    { docId: id, input: { currency: input.currency } },
+  );
+  return id;
+}
+
+export const statementApi = {
+  setStatus: (docId: string, status: BillingStatementStatus) =>
+    mutate("BillingStatement", "editStatus", "docId: $docId, input: $input", {
+      docId,
+      input: { status },
+    }),
+  editStatement: (
+    docId: string,
+    patch: { currency?: string; notes?: string },
+  ) =>
+    mutate(
+      "BillingStatement",
+      "editBillingStatement",
+      "docId: $docId, input: $input",
+      { docId, input: patch },
+    ),
+  addLineItem: (
+    docId: string,
+    input: {
+      description: string;
+      quantity: number;
+      unit: BillingUnit;
+      unitPriceCash: number;
+      unitPricePwt: number;
+    },
+  ) =>
+    mutate("BillingStatement", "addLineItem", "docId: $docId, input: $input", {
+      docId,
+      input: {
+        id: randomId(),
+        description: input.description,
+        quantity: input.quantity,
+        unit: input.unit,
+        unitPriceCash: input.unitPriceCash,
+        unitPricePwt: input.unitPricePwt,
+        totalPriceCash: input.unitPriceCash * input.quantity,
+        totalPricePwt: input.unitPricePwt * input.quantity,
+      },
+    }),
+  deleteLineItem: (docId: string, id: string) =>
+    mutate("BillingStatement", "deleteLineItem", "docId: $docId, input: $input", {
+      docId,
+      input: { id },
+    }),
 };
