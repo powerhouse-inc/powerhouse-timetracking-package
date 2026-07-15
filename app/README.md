@@ -24,9 +24,28 @@ npm run dev         # http://localhost:3030
 
 ## Pages
 
+This is the Powerhouse team's **operations app** — time, sales, delivery and
+billing in one place. The `TimetrackingWorkspace` document is the shared
+directory of clients/projects/members that the other sections link to.
+
 - **Timer** — live running timer (start/stop/discard), day-grouped entries, inline edit.
+- **Calendar** — drag-and-drop day/week/month time tracking.
 - **Reports** — totals, weekly bar chart, project donut, breakdown. Managers get a Team toggle.
+- **Sales › Pipeline** — lead-funnel kanban with drag-to-move stages, deal-value
+  summaries, an add-lead form and a detail drawer (fields, priority, activity log).
+  Company/owner autocomplete from workspace clients/members.
+- **Delivery › Scopes of Work** — scope-of-work documents with deliverables
+  (status, progress, budgeted hours) and projects. Flagship view: **budgeted
+  hours vs. tracked hours** per project (tracked hours summed from timesheets,
+  matched by project name/code).
+- **Billing › Invoices / Statements** — invoices (parties, line items, status
+  lifecycle, totals) and contributor billing statements (cash + POWT line items).
+  Managerial/billing roles only.
 - **Projects / Clients / Members** — management tables (managerial roles only). Members shows the Access Rights column.
+
+Each section talks to its document model over the same GraphQL namespace
+pattern (`<Model> { documents }` reads, `<Model>_<Op>Input` mutations) via
+`lib/api.ts`, polled with React Query in `lib/hooks.ts`.
 
 ## Auth
 
