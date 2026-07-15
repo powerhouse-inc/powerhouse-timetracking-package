@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { formatAmount } from "@/lib/billing";
+import { INVOICE_STATUS, formatAmount, statusMeta } from "@/lib/billing";
+import { markInvoicePaidAsStatement } from "@/lib/api";
 import {
   accountTypeMeta,
   amountUnit,
@@ -13,19 +14,24 @@ import {
   useAccountTransactions,
   useAccounts,
   useExpenseReports,
+  useInvoices,
+  useRefresh,
   useSnapshotReports,
 } from "@/lib/hooks";
 import type {
   AccountEntry,
   AccountTransactionsDoc,
   ExpenseReportDoc,
+  InvoiceDoc,
   SnapshotReportDoc,
 } from "@/lib/types";
+import { toast } from "@/lib/toast";
 import { EmptyState, PageHeader } from "@/components/ui";
 
-type Tab = "accounts" | "transactions" | "expense" | "snapshot";
+type Tab = "invoices" | "accounts" | "transactions" | "expense" | "snapshot";
 
 const TABS: { key: Tab; label: string }[] = [
+  { key: "invoices", label: "Invoices" },
   { key: "accounts", label: "Accounts" },
   { key: "transactions", label: "Transactions" },
   { key: "expense", label: "Expense Reports" },
@@ -33,7 +39,7 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export function FinanceView() {
-  const [tab, setTab] = useState<Tab>("accounts");
+  const [tab, setTab] = useState<Tab>("invoices");
 
   return (
     <>
@@ -58,6 +64,7 @@ export function FinanceView() {
         ))}
       </div>
 
+      {tab === "invoices" && <InvoicesTab />}
       {tab === "accounts" && <AccountsTab />}
       {tab === "transactions" && <TransactionsTab />}
       {tab === "expense" && <ExpenseReportsTab />}
@@ -92,6 +99,91 @@ function Chip({ label, color }: { label: string; color: string }) {
     >
       {label}
     </span>
+  );
+}
+
+/* -------------------------------- invoices ------------------------------- */
+
+// Invoices submitted by contributors are ISSUED or beyond (drafts never reach
+// finance). "Paid" here means we've already recorded a billing statement.
+const PAID_STATES = new Set(["PAYMENTRECEIVED", "PAYMENTCLOSED"]);
+
+function InvoicesTab() {
+  const { data, isLoading } = useInvoices();
+  const refresh = useRefresh();
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const list: InvoiceDoc[] = (data ?? []).filter((i) => i.status !== "DRAFT");
+
+  const markPaid = async (invoice: InvoiceDoc) => {
+    if (busy) return;
+    setBusy(invoice.id);
+    try {
+      await markInvoicePaidAsStatement(invoice);
+      toast(
+        `Marked ${invoice.invoiceNo || "invoice"} paid — billing statement created.`,
+        "success",
+      );
+      refresh();
+    } catch {
+      toast("Couldn't mark the invoice paid. Try again.", "error");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  if (isLoading) return <EmptyState>Loading…</EmptyState>;
+  if (list.length === 0)
+    return <EmptyState>No invoices submitted by contributors yet.</EmptyState>;
+
+  return (
+    <div className="tt-card overflow-x-auto">
+      <div className="min-w-[820px]">
+        <div className="grid min-w-[820px] grid-cols-[1fr_1.3fr_140px_140px_180px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
+          <span>Invoice</span>
+          <span>Contributor</span>
+          <span>Amount</span>
+          <span>Status</span>
+          <span />
+        </div>
+        {list.map((inv) => {
+          const meta = statusMeta(INVOICE_STATUS, inv.status);
+          const paid = PAID_STATES.has(inv.status);
+          return (
+            <div
+              key={inv.id}
+              className="grid min-w-[820px] grid-cols-[1fr_1.3fr_140px_140px_180px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-sm last:border-0"
+            >
+              <span className="truncate font-medium text-mist-100">
+                {inv.invoiceNo || "—"}
+              </span>
+              <span className="truncate text-mist-300">
+                {inv.issuerName || "—"}
+              </span>
+              <span className="tabular-nums text-mist-200">
+                {formatAmount(inv.totalPriceTaxIncl, inv.currency)}
+              </span>
+              <Chip label={meta.label} color={meta.color} />
+              <span className="flex justify-end">
+                {paid ? (
+                  <span className="text-xs text-emerald-300">
+                    ✓ Statement created
+                  </span>
+                ) : (
+                  <button
+                    className="tt-btn-primary py-1 text-xs"
+                    onClick={() => markPaid(inv)}
+                    disabled={busy === inv.id}
+                  >
+                    {busy === inv.id ? "Working…" : "Mark paid → statement"}
+                  </button>
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

@@ -49,6 +49,7 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
   {
     heading: "Billing",
     items: [
+      { href: "/submit-invoice", label: "Submit Invoice", icon: "✎" },
       { href: "/invoices", label: "Invoices", icon: "▤", managerial: true },
       { href: "/statements", label: "Statements", icon: "▥", managerial: true },
       { href: "/finance", label: "Finance", icon: "◭", managerial: true },

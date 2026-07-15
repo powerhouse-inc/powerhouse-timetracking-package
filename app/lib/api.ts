@@ -982,6 +982,115 @@ export const statementApi = {
     }),
 };
 
+/* ===================== contributor invoice workflow ==================== */
+
+export interface NewInvoiceLine {
+  description: string;
+  quantity: number;
+  unitPriceTaxExcl: number;
+  taxPercent: number;
+}
+
+/**
+ * A worker submits an invoice to the org: issuer = the member, payer = the
+ * workspace. Sets a placeholder issuer wallet so the invoice can leave DRAFT,
+ * then issues it. Returns the new document id.
+ */
+export async function submitInvoice(input: {
+  invoiceNo: string;
+  currency: string;
+  issuerName: string;
+  issuerAddress?: string | null;
+  payerName: string;
+  notes?: string;
+  lines: NewInvoiceLine[];
+}): Promise<string> {
+  const id = await createInvoice({
+    invoiceNo: input.invoiceNo,
+    currency: input.currency,
+    issuerName: input.issuerName,
+    payerName: input.payerName,
+  });
+  if (input.notes) await invoiceApi.editInvoice(id, { notes: input.notes });
+  for (const l of input.lines) {
+    await invoiceApi.addLineItem(id, { ...l, currency: input.currency });
+  }
+  // Wallet is required before an invoice can leave DRAFT.
+  await mutate("Invoice", "editIssuerWallet", "docId: $docId, input: $input", {
+    docId: id,
+    input: {
+      address: input.issuerAddress || "contributor",
+      chainName: "ethereum",
+      chainId: "1",
+    },
+  });
+  await invoiceApi.setStatus(id, "ISSUED");
+  return id;
+}
+
+interface ImportedInvoice {
+  invoiceNo: string;
+  currency: string;
+  issuerName: string;
+  payerName: string;
+  notes: string;
+  lines: NewInvoiceLine[];
+}
+
+/**
+ * Best-effort parse of an exported Powerhouse invoice document (JSON) into the
+ * fields we need to re-create it. Tolerates the common export shapes
+ * (getDocument output, a bare state, or state.global).
+ */
+export function parseInvoiceDocFile(text: string): ImportedInvoice {
+  const parsed = JSON.parse(text) as Record<string, unknown>;
+  const g = ((parsed.state as { global?: unknown })?.global ??
+    (parsed as { global?: unknown }).global ??
+    parsed) as Record<string, unknown>;
+  const li = Array.isArray(g.lineItems) ? (g.lineItems as Record<string, unknown>[]) : [];
+  const name = (v: unknown) =>
+    v && typeof v === "object" ? String((v as { name?: unknown }).name ?? "") : "";
+  return {
+    invoiceNo: String(g.invoiceNo ?? ""),
+    currency: String(g.currency ?? "USD"),
+    issuerName: name(g.issuer),
+    payerName: name(g.payer),
+    notes: typeof g.notes === "string" ? g.notes : "",
+    lines: li.map((l) => ({
+      description: String(l.description ?? "Line item"),
+      quantity: Number(l.quantity ?? 1),
+      unitPriceTaxExcl: Number(l.unitPriceTaxExcl ?? l.unitPriceTaxIncl ?? 0),
+      taxPercent: Number(l.taxPercent ?? 0),
+    })),
+  };
+}
+
+/**
+ * Finance marks a submitted invoice paid, producing the billing-statement
+ * record of that payment (contributor = the invoice's issuer). Returns the
+ * statement id.
+ */
+export async function markInvoicePaidAsStatement(
+  invoice: InvoiceDoc,
+): Promise<string> {
+  await invoiceApi.setStatus(invoice.id, "PAYMENTRECEIVED");
+  const stmtId = await createBillingStatement({
+    contributor: invoice.issuerName ?? "Contributor",
+    currency: invoice.currency,
+  });
+  for (const li of invoice.lineItems) {
+    await statementApi.addLineItem(stmtId, {
+      description: li.description,
+      quantity: li.quantity,
+      unit: "UNIT",
+      unitPriceCash: li.unitPriceTaxIncl,
+      unitPricePwt: 0,
+    });
+  }
+  await statementApi.setStatus(stmtId, "PAID");
+  return stmtId;
+}
+
 /* ============================== finance =============================== */
 /* Read-only surfacing of the billing/accounting document models. */
 
