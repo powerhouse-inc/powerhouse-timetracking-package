@@ -5,7 +5,9 @@ export function fmtDate(v?: string | null): string {
   if (!v) return "—";
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return v;
-  return d.toLocaleDateString(undefined, {
+  // Pin to en-US so dates match the app's en-US money formatting rather than
+  // splitting locales (e.g. "Jul 11, 2026" alongside "$3,000").
+  return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
