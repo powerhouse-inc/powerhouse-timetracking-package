@@ -8,6 +8,7 @@
  * rewrites this file.
  */
 import type { EditorModule } from "document-model";
+import { LeadFunnelBoard } from "./lead-funnel-board/module.js";
 import { TimesheetEditor } from "./timesheet-editor/module.js";
 import { TtDriveEditor } from "./tt-drive/module.js";
 import { WorkspaceEditor } from "./workspace-editor/module.js";
@@ -16,4 +17,5 @@ export const editors: EditorModule[] = [
   TimesheetEditor,
   WorkspaceEditor,
   TtDriveEditor,
+  LeadFunnelBoard,
 ];

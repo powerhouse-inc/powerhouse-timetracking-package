@@ -1,0 +1,141 @@
+scalar Unknown
+scalar DateTime
+scalar Address
+scalar AttachmentRef
+scalar Amount_Tokens
+scalar EthereumAddress
+scalar EmailAddress
+scalar Amount_Percentage
+scalar Date
+scalar URL
+scalar Amount_Money
+scalar OLabel
+scalar Currency
+scalar PHID
+scalar OID
+scalar Amount_Fiat
+scalar Amount_Currency
+scalar Amount_Crypto
+scalar Amount
+scalar Upload
+
+type LeadFunnelState {
+  name: String!
+  leads: [Lead!]!
+}
+
+type Lead {
+  id: OID!
+  name: String!
+  company: String
+  email: EmailAddress
+  phone: String
+  source: LeadSource!
+  stage: LeadStage!
+  priority: LeadPriority!
+  estimatedValue: Amount_Money
+  owner: String
+  score: Int!
+  tags: [String!]!
+  notes: String
+  activities: [Activity!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Activity {
+  id: OID!
+  type: ActivityType!
+  note: String
+  timestamp: DateTime!
+}
+
+enum LeadStage { NEW CONTACTED QUALIFIED PROPOSAL NEGOTIATION WON LOST }
+
+enum LeadSource { WEBSITE REFERRAL COLD_OUTREACH EVENT SOCIAL OTHER }
+
+enum LeadPriority { LOW MEDIUM HIGH }
+
+enum ActivityType { CALL EMAIL MEETING NOTE }
+
+# funnel
+
+input SetFunnelNameInput {
+  name: String!
+}
+
+# leads
+
+input AddLeadInput {
+  id: OID!
+  name: String!
+  company: String
+  email: EmailAddress
+  phone: String
+  source: LeadSource
+  priority: LeadPriority
+  estimatedValue: Amount_Money
+  owner: String
+  score: Int
+  tags: [String!]
+  notes: String
+  createdAt: DateTime!
+}
+
+input UpdateLeadInput {
+  id: OID!
+  name: String
+  company: String
+  email: EmailAddress
+  phone: String
+  source: LeadSource
+  priority: LeadPriority
+  estimatedValue: Amount_Money
+  owner: String
+  score: Int
+  notes: String
+  updatedAt: DateTime!
+}
+
+input MoveLeadInput {
+  id: OID!
+  stage: LeadStage!
+  updatedAt: DateTime!
+}
+
+input ReorderLeadInput {
+  id: OID!
+  targetIndex: Int!
+}
+
+input DeleteLeadInput {
+  id: OID!
+}
+
+# activities
+
+input AddActivityInput {
+  leadId: OID!
+  id: OID!
+  type: ActivityType!
+  note: String
+  timestamp: DateTime!
+}
+
+input DeleteActivityInput {
+  leadId: OID!
+  id: OID!
+  timestamp: DateTime!
+}
+
+# tags
+
+input AddTagInput {
+  leadId: OID!
+  tag: String!
+}
+
+input RemoveTagInput {
+  leadId: OID!
+  tag: String!
+}

@@ -1,0 +1,295 @@
+import type { DocumentModelGlobalState } from "document-model";
+
+export const documentModel: DocumentModelGlobalState = {
+  id: "crm/lead-funnel",
+  name: "Lead Funnel",
+  author: {
+    name: "Powerhouse",
+    website: "https://www.powerhouse.inc/",
+  },
+  extension: "lfnl",
+  description:
+    "A Salesforce-style sales lead funnel managed as a kanban board. Leads move through fixed pipeline stages, carry CRM fields, activities, tags and a score.",
+  specifications: [
+    {
+      state: {
+        local: {
+          schema: "",
+          examples: [],
+          initialValue: "",
+        },
+        global: {
+          schema:
+            "type LeadFunnelState {\n  name: String!\n  leads: [Lead!]!\n}\n\ntype Lead {\n  id: OID!\n  name: String!\n  company: String\n  email: EmailAddress\n  phone: String\n  source: LeadSource!\n  stage: LeadStage!\n  priority: LeadPriority!\n  estimatedValue: Amount_Money\n  owner: String\n  score: Int!\n  tags: [String!]!\n  notes: String\n  activities: [Activity!]!\n  createdAt: DateTime!\n  updatedAt: DateTime!\n}\n\ntype Activity {\n  id: OID!\n  type: ActivityType!\n  note: String\n  timestamp: DateTime!\n}\n\nenum LeadStage { NEW CONTACTED QUALIFIED PROPOSAL NEGOTIATION WON LOST }\n\nenum LeadSource { WEBSITE REFERRAL COLD_OUTREACH EVENT SOCIAL OTHER }\n\nenum LeadPriority { LOW MEDIUM HIGH }\n\nenum ActivityType { CALL EMAIL MEETING NOTE }",
+          examples: [],
+          initialValue: '{"name":"Lead Funnel","leads":[]}',
+        },
+      },
+      modules: [
+        {
+          id: "mod-funnel",
+          name: "funnel",
+          description: "Board-level operations",
+          operations: [
+            {
+              id: "op-set-funnel-name",
+              name: "SET_FUNNEL_NAME",
+              description: "Rename the funnel board",
+              schema: "input SetFunnelNameInput {\n  name: String!\n}",
+              template: "Rename the funnel board",
+              reducer: "state.name = action.input.name;",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+          ],
+        },
+        {
+          id: "mod-leads",
+          name: "leads",
+          description:
+            "Lead card lifecycle: create, edit, move between stages, reorder, delete",
+          operations: [
+            {
+              id: "op-add-lead",
+              name: "ADD_LEAD",
+              description: "Add a new lead to the funnel in the NEW stage",
+              schema:
+                "input AddLeadInput {\n  id: OID!\n  name: String!\n  company: String\n  email: EmailAddress\n  phone: String\n  source: LeadSource\n  priority: LeadPriority\n  estimatedValue: Amount_Money\n  owner: String\n  score: Int\n  tags: [String!]\n  notes: String\n  createdAt: DateTime!\n}",
+              template: "Add a new lead to the funnel in the NEW stage",
+              reducer:
+                'if (state.leads.some((l) => l.id === action.input.id)) {\n  throw new DuplicateLeadIdError(`Lead with id ${action.input.id} already exists`);\n}\nstate.leads.push({\n  id: action.input.id,\n  name: action.input.name,\n  company: action.input.company || null,\n  email: action.input.email || null,\n  phone: action.input.phone || null,\n  source: action.input.source || "OTHER",\n  stage: "NEW",\n  priority: action.input.priority || "MEDIUM",\n  estimatedValue: action.input.estimatedValue || null,\n  owner: action.input.owner || null,\n  score: action.input.score ?? 0,\n  tags: action.input.tags || [],\n  notes: action.input.notes || null,\n  activities: [],\n  createdAt: action.input.createdAt,\n  updatedAt: action.input.createdAt,\n});',
+              errors: [
+                {
+                  id: "err-add-lead-dup",
+                  name: "DuplicateLeadIdError",
+                  code: "DUPLICATE_LEAD_ID",
+                  description:
+                    "A lead with the given id already exists in the funnel",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-update-lead",
+              name: "UPDATE_LEAD",
+              description: "Update editable fields of a lead",
+              schema:
+                "input UpdateLeadInput {\n  id: OID!\n  name: String\n  company: String\n  email: EmailAddress\n  phone: String\n  source: LeadSource\n  priority: LeadPriority\n  estimatedValue: Amount_Money\n  owner: String\n  score: Int\n  notes: String\n  updatedAt: DateTime!\n}",
+              template: "Update editable fields of a lead",
+              reducer:
+                "const lead = state.leads.find((l) => l.id === action.input.id);\nif (!lead) {\n  throw new LeadNotFoundError(`Lead with id ${action.input.id} not found`);\n}\nif (action.input.name) lead.name = action.input.name;\nif (action.input.company) lead.company = action.input.company;\nif (action.input.email) lead.email = action.input.email;\nif (action.input.phone) lead.phone = action.input.phone;\nif (action.input.source) lead.source = action.input.source;\nif (action.input.priority) lead.priority = action.input.priority;\nif (action.input.estimatedValue) lead.estimatedValue = action.input.estimatedValue;\nif (action.input.owner) lead.owner = action.input.owner;\nif (action.input.score !== undefined && action.input.score !== null) lead.score = action.input.score;\nif (action.input.notes) lead.notes = action.input.notes;\nlead.updatedAt = action.input.updatedAt;",
+              errors: [
+                {
+                  id: "err-update-lead-nf",
+                  name: "LeadNotFoundError",
+                  code: "LEAD_NOT_FOUND",
+                  description: "No lead with the given id exists in the funnel",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-move-lead",
+              name: "MOVE_LEAD",
+              description:
+                "Move a lead to a different pipeline stage (the core kanban drag)",
+              schema:
+                "input MoveLeadInput {\n  id: OID!\n  stage: LeadStage!\n  updatedAt: DateTime!\n}",
+              template:
+                "Move a lead to a different pipeline stage (the core kanban drag)",
+              reducer:
+                "const lead = state.leads.find((l) => l.id === action.input.id);\nif (!lead) {\n  throw new LeadNotFoundError(`Lead with id ${action.input.id} not found`);\n}\nlead.stage = action.input.stage;\nlead.updatedAt = action.input.updatedAt;",
+              errors: [
+                {
+                  id: "err-move-lead-nf",
+                  name: "LeadNotFoundError",
+                  code: "LEAD_NOT_FOUND",
+                  description: "No lead with the given id exists in the funnel",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-reorder-lead",
+              name: "REORDER_LEAD",
+              description: "Reorder a lead within the board array",
+              schema:
+                "input ReorderLeadInput {\n  id: OID!\n  targetIndex: Int!\n}",
+              template: "Reorder a lead within the board array",
+              reducer:
+                "const currentIndex = state.leads.findIndex((l) => l.id === action.input.id);\nif (currentIndex === -1) {\n  throw new LeadNotFoundError(`Lead with id ${action.input.id} not found`);\n}\nconst [lead] = state.leads.splice(currentIndex, 1);\nconst target = Math.max(0, Math.min(action.input.targetIndex, state.leads.length));\nstate.leads.splice(target, 0, lead);",
+              errors: [
+                {
+                  id: "err-reorder-lead-nf",
+                  name: "LeadNotFoundError",
+                  code: "LEAD_NOT_FOUND",
+                  description: "No lead with the given id exists in the funnel",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-delete-lead",
+              name: "DELETE_LEAD",
+              description: "Remove a lead from the funnel",
+              schema: "input DeleteLeadInput {\n  id: OID!\n}",
+              template: "Remove a lead from the funnel",
+              reducer:
+                "const index = state.leads.findIndex((l) => l.id === action.input.id);\nif (index === -1) {\n  throw new LeadNotFoundError(`Lead with id ${action.input.id} not found`);\n}\nstate.leads.splice(index, 1);",
+              errors: [
+                {
+                  id: "err-delete-lead-nf",
+                  name: "LeadNotFoundError",
+                  code: "LEAD_NOT_FOUND",
+                  description: "No lead with the given id exists in the funnel",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+          ],
+        },
+        {
+          id: "mod-activities",
+          name: "activities",
+          description: "Per-lead activity timeline",
+          operations: [
+            {
+              id: "op-add-activity",
+              name: "ADD_ACTIVITY",
+              description:
+                "Log an activity (call/email/meeting/note) on a lead",
+              schema:
+                "input AddActivityInput {\n  leadId: OID!\n  id: OID!\n  type: ActivityType!\n  note: String\n  timestamp: DateTime!\n}",
+              template: "Log an activity (call/email/meeting/note) on a lead",
+              reducer:
+                "const lead = state.leads.find((l) => l.id === action.input.leadId);\nif (!lead) {\n  throw new LeadNotFoundError(`Lead with id ${action.input.leadId} not found`);\n}\nif (lead.activities.some((a) => a.id === action.input.id)) {\n  throw new DuplicateActivityIdError(`Activity with id ${action.input.id} already exists`);\n}\nlead.activities.push({\n  id: action.input.id,\n  type: action.input.type,\n  note: action.input.note || null,\n  timestamp: action.input.timestamp,\n});\nlead.updatedAt = action.input.timestamp;",
+              errors: [
+                {
+                  id: "err-add-activity-lead-nf",
+                  name: "LeadNotFoundError",
+                  code: "LEAD_NOT_FOUND",
+                  description: "No lead with the given id exists in the funnel",
+                  template: "",
+                },
+                {
+                  id: "err-add-activity-dup",
+                  name: "DuplicateActivityIdError",
+                  code: "DUPLICATE_ACTIVITY_ID",
+                  description:
+                    "An activity with the given id already exists on this lead",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-delete-activity",
+              name: "DELETE_ACTIVITY",
+              description: "Remove an activity from a lead",
+              schema:
+                "input DeleteActivityInput {\n  leadId: OID!\n  id: OID!\n  timestamp: DateTime!\n}",
+              template: "Remove an activity from a lead",
+              reducer:
+                "const lead = state.leads.find((l) => l.id === action.input.leadId);\nif (!lead) {\n  throw new LeadNotFoundError(`Lead with id ${action.input.leadId} not found`);\n}\nconst index = lead.activities.findIndex((a) => a.id === action.input.id);\nif (index === -1) {\n  throw new ActivityNotFoundError(`Activity with id ${action.input.id} not found`);\n}\nlead.activities.splice(index, 1);\nlead.updatedAt = action.input.timestamp;",
+              errors: [
+                {
+                  id: "err-delete-activity-lead-nf",
+                  name: "LeadNotFoundError",
+                  code: "LEAD_NOT_FOUND",
+                  description: "No lead with the given id exists in the funnel",
+                  template: "",
+                },
+                {
+                  id: "err-delete-activity-nf",
+                  name: "ActivityNotFoundError",
+                  code: "ACTIVITY_NOT_FOUND",
+                  description:
+                    "No activity with the given id exists on this lead",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+          ],
+        },
+        {
+          id: "mod-tags",
+          name: "tags",
+          description: "Per-lead tags",
+          operations: [
+            {
+              id: "op-add-tag",
+              name: "ADD_TAG",
+              description: "Attach a tag to a lead",
+              schema: "input AddTagInput {\n  leadId: OID!\n  tag: String!\n}",
+              template: "Attach a tag to a lead",
+              reducer:
+                "const lead = state.leads.find((l) => l.id === action.input.leadId);\nif (!lead) {\n  throw new LeadNotFoundError(`Lead with id ${action.input.leadId} not found`);\n}\nif (lead.tags.includes(action.input.tag)) {\n  throw new DuplicateTagError(`Tag ${action.input.tag} already exists on this lead`);\n}\nlead.tags.push(action.input.tag);",
+              errors: [
+                {
+                  id: "err-add-tag-lead-nf",
+                  name: "LeadNotFoundError",
+                  code: "LEAD_NOT_FOUND",
+                  description: "No lead with the given id exists in the funnel",
+                  template: "",
+                },
+                {
+                  id: "err-add-tag-dup",
+                  name: "DuplicateTagError",
+                  code: "DUPLICATE_TAG",
+                  description: "The tag already exists on this lead",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "op-remove-tag",
+              name: "REMOVE_TAG",
+              description: "Remove a tag from a lead",
+              schema:
+                "input RemoveTagInput {\n  leadId: OID!\n  tag: String!\n}",
+              template: "Remove a tag from a lead",
+              reducer:
+                "const lead = state.leads.find((l) => l.id === action.input.leadId);\nif (!lead) {\n  throw new LeadNotFoundError(`Lead with id ${action.input.leadId} not found`);\n}\nconst index = lead.tags.indexOf(action.input.tag);\nif (index === -1) {\n  throw new TagNotFoundError(`Tag ${action.input.tag} not found on this lead`);\n}\nlead.tags.splice(index, 1);",
+              errors: [
+                {
+                  id: "err-remove-tag-lead-nf",
+                  name: "LeadNotFoundError",
+                  code: "LEAD_NOT_FOUND",
+                  description: "No lead with the given id exists in the funnel",
+                  template: "",
+                },
+                {
+                  id: "err-remove-tag-nf",
+                  name: "TagNotFoundError",
+                  code: "TAG_NOT_FOUND",
+                  description: "The tag does not exist on this lead",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+          ],
+        },
+      ],
+      version: 1,
+      changeLog: [],
+    },
+  ],
+};
