@@ -147,3 +147,44 @@ differ.
 
 App UI, sidebar changes, data-layer additions, unification linking-fields, processors, and
 subgraphs for the new models. All handled in later phases.
+
+---
+
+## Phase 0 — Outcome (completed 2026-07-15)
+
+**Status: DONE.** All 9 models + all 14 editors imported on branch `feat/operations-app`.
+
+Final gates: `tsc` 0 errors · `lint` 0 errors (warnings only; exit 0) · **595 tests, 100%
+reducer coverage** on all four metrics · circular-imports check exit 0.
+
+### What landed
+- 11 document models registered (2 existing + lead-funnel + scope-of-work + 7 billing).
+- 14 editors registered in `editors/editors.ts` (incl. 2 drive-app editors).
+- New deps: `@powerhousedao/reactor-api` (baseline fix), `document-drive`, `lucide-react`,
+  `@powerhousedao/builder-profile`, `tailwind-merge`, `@react-pdf/renderer`,
+  `world-countries`. The heavy SDKs (ethers/@safe-global/alchemy) were **not** needed —
+  the integrations use fetch/raw-XML, and only `scripts/alchemy` + `scripts/contributor-billing`
+  (zero external deps) were required.
+
+### Deviations from the original plan (all approved / justified)
+- **Backfilled to 100%, removed dead code.** Imported reducers shipped well below the 95%
+  branch gate. Per user decision, removed provably-unreachable dead code (input guards on
+  required fields already enforced by the generated zod parse, mutually-exclusive invariant
+  blocks, same-predicate not-found checks) and kept genuinely-defensive guards on *nullable*
+  state (covered via seeded documents). Fixed a real runtime bug in billing-statement
+  `editStatus` (circular-import → `undefined` schema).
+- **ESLint relaxed for vendored code.** `no-unsafe-*` downgraded to warnings for
+  `editors/**` + `scripts/**` only (`document-models/**` stays strict) — matches "copy but
+  don't polish".
+
+### ⚠️ Operational caveats for later phases
+- **`ph generate document-model` REWRITES hand-written test files**, not just `gen/`. It is
+  therefore **NOT** safe to re-run after test backfilling — it will clobber the coverage
+  tests. Later phases that add unification linking-fields (SET_STATE_SCHEMA + regenerate)
+  MUST re-backfill the affected model's tests after regenerating, or edit `schema.graphql`
+  + `gen/` narrowly instead of a full regen.
+- **Reducer edits are not mirrored into the model `.json` specs** (file-copy workflow, no
+  MCP/Vetra). `src/` is authoritative and not overwritten by regen, but a from-scratch
+  regen would reintroduce the dead code. Low impact; noted for awareness.
+- **One pre-existing circular import** in vendored code:
+  `editors/invoice/legalEntity/legalEntity.tsx ↔ bankSection.tsx` (non-blocking, exit 0).
