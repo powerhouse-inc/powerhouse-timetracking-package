@@ -9,13 +9,16 @@ export function BarChart({
 }) {
   const max = Math.max(1, ...data.map((d) => d.seconds));
   return (
-    <div className="flex h-44 items-end gap-2">
+    // h-44 row; columns stretch (no items-end) so the bar track below has a
+    // definite height for its percentage-height bar to resolve against.
+    <div className="flex h-44 gap-2">
       {data.map((d, i) => {
         const h = (d.seconds / max) * 100;
         const bh = (d.billable / max) * 100;
         return (
           <div key={i} className="flex flex-1 flex-col items-center gap-2">
-            <div className="relative flex h-full w-full max-w-9 items-end justify-center">
+            {/* flex-1 gives the track a definite height inside the column */}
+            <div className="relative flex w-full max-w-9 flex-1 items-end justify-center">
               <div
                 className="w-full rounded-t-md bg-ink-600 transition-all"
                 style={{ height: `${h}%` }}
