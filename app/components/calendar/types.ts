@@ -1,6 +1,6 @@
 import type { RawEntry, RawRunning } from "@/lib/api";
 import type { WorkspaceProject } from "@/lib/types";
-import type { EntryBlockAction } from "./calendar-block.js";
+import type { EntryBlockAction } from "./calendar-block";
 
 /* ------------------------------------------------------------------ */
 /*  Shared types for calendar components                               */

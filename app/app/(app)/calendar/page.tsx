@@ -1,26 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PageHeader } from "@/components/ui.js";
-import { ensureTimesheet, timesheetApi } from "@/lib/api.js";
-import { useAuth } from "@/lib/auth.js";
-import { useMyTimesheet, useRefresh, useWorkspace } from "@/lib/hooks.js";
+import { PageHeader } from "@/components/ui";
+import { ensureTimesheet, timesheetApi } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { useMyTimesheet, useRefresh, useWorkspace } from "@/lib/hooks";
 import {
   durationSeconds,
   formatDurationShort,
   startOfWeek,
-} from "@/lib/calendar/time.js";
-import { CalendarGrid } from "@/components/calendar/calendar-grid.js";
-import type { CalendarDragState } from "@/components/calendar/types.js";
-import { CreatePopover } from "@/components/calendar/create-popover.js";
-import { EditPopover } from "@/components/calendar/edit-popover.js";
-import type { EntryBlockAction } from "@/components/calendar/calendar-block.js";
+} from "@/lib/calendar/time";
+import { CalendarGrid } from "@/components/calendar/calendar-grid";
+import type { CalendarDragState } from "@/components/calendar/types";
+import { CreatePopover } from "@/components/calendar/create-popover";
+import { EditPopover } from "@/components/calendar/edit-popover";
+import type { EntryBlockAction } from "@/components/calendar/calendar-block";
 import {
   HOUR_HEIGHT,
   SNAP_MINUTES,
   timeToY,
   yToTime,
-} from "@/lib/calendar/time.js";
+} from "@/lib/calendar/time";
 
 /* ------------------------------------------------------------------ */
 /*  Calendar page                                                      */

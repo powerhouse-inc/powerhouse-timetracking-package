@@ -1,6 +1,6 @@
 "use client";
 
-import { timeToY } from "@/lib/calendar/time.js";
+import { timeToY } from "@/lib/calendar/time";
 
 interface NowIndicatorProps {
   nowMs: number;

@@ -6,7 +6,7 @@ import {
   formatTime24,
   durationSeconds,
   formatDurationShort,
-} from "@/lib/calendar/time.js";
+} from "@/lib/calendar/time";
 
 interface CreatePopoverProps {
   position: { top: number; left: number };

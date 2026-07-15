@@ -1,6 +1,6 @@
 "use client";
 
-import { HOUR_HEIGHT, formatTime24 } from "@/lib/calendar/time.js";
+import { HOUR_HEIGHT, formatTime24 } from "@/lib/calendar/time";
 
 interface TimeAxisProps {
   height: number;
