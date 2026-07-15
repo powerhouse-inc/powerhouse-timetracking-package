@@ -45,7 +45,7 @@ export function FinanceView() {
     <>
       <PageHeader
         title="Finance"
-        subtitle="Accounts, transactions and financial reports (read-only)"
+        subtitle="Contributor invoices, accounts, transactions and financial reports"
       />
 
       <div className="mb-6 flex flex-wrap gap-1 border-b border-ink-600/60">
