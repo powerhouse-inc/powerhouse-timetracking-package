@@ -121,6 +121,7 @@ input AddProjectInput {
   clientId: OID
   color: String!
   billable: Boolean!
+  hourlyRate: Amount_Money
 }
 
 input UpdateProjectInput {
@@ -129,6 +130,7 @@ input UpdateProjectInput {
   clientId: OID
   color: String
   billable: Boolean
+  hourlyRate: Amount_Money
 }
 
 input ArchiveProjectInput {

@@ -314,7 +314,13 @@ export const workspaceApi = {
   updateProject: (
     docId: string,
     id: string,
-    patch: { name?: string; clientId?: string | null; color?: string; billable?: boolean },
+    patch: {
+      name?: string;
+      clientId?: string | null;
+      color?: string;
+      billable?: boolean;
+      hourlyRate?: number;
+    },
   ) =>
     mutate("TimetrackingWorkspace", "updateProject", "docId: $docId, input: $input", {
       docId,

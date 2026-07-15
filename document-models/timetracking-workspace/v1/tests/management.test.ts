@@ -11,8 +11,7 @@ import {
   updateClient,
   updateMember,
   updateProject,
-  utils,
-} from "document-models/timetracking-workspace/v1";
+  utils, isTimetrackingWorkspaceDocument, SetWorkspaceNameInputSchema, AddMemberInputSchema, UpdateMemberInputSchema, SetMemberRoleInputSchema, ArchiveMemberInputSchema, AddClientInputSchema, UpdateClientInputSchema, ArchiveClientInputSchema, AddProjectInputSchema, UpdateProjectInputSchema, ArchiveProjectInputSchema } from "document-models/timetracking-workspace/v1";
 import { describe, expect, it } from "vitest";
 
 const lastError = (doc: ReturnType<typeof utils.createDocument>) => {
@@ -52,6 +51,7 @@ describe("TimetrackingWorkspace management reducers", () => {
         clientId: "c1",
         color: "#ff0080",
         billable: true,
+        hourlyRate: 120,
       }),
     );
     doc = reducer(
@@ -66,7 +66,8 @@ describe("TimetrackingWorkspace management reducers", () => {
     expect(doc.state.global.projects).toHaveLength(2);
     expect(doc.state.global.projects[0].clientId).toBe("c1");
     expect(doc.state.global.projects[1].clientId).toBeNull();
-    expect(doc.state.global.projects[0].hourlyRate).toBeNull();
+    expect(doc.state.global.projects[0].hourlyRate).toBe(120);
+    expect(doc.state.global.projects[1].hourlyRate).toBeNull();
 
     // update every project field, incl billable:false (falsy but valid)
     doc = reducer(
@@ -77,6 +78,7 @@ describe("TimetrackingWorkspace management reducers", () => {
         clientId: "c2",
         color: "#00ff80",
         billable: false,
+        hourlyRate: 175,
       }),
     );
     expect(doc.state.global.projects[0]).toMatchObject({
@@ -84,6 +86,7 @@ describe("TimetrackingWorkspace management reducers", () => {
       clientId: "c2",
       color: "#00ff80",
       billable: false,
+      hourlyRate: 175,
     });
     // no-op project update (all optional fields absent)
     doc = reducer(doc, updateProject({ id: "p1" }));

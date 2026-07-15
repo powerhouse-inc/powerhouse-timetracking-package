@@ -1,3 +1,4 @@
+import type { TimetrackingWorkspaceManagementOperations } from "document-models/timetracking-workspace/v1";
 import {
   ClientNotFoundError,
   DuplicateClientError,
@@ -6,7 +7,6 @@ import {
   MemberNotFoundError,
   ProjectNotFoundError,
 } from "../../gen/management/error.js";
-import type { TimetrackingWorkspaceManagementOperations } from "document-models/timetracking-workspace/v1";
 
 export const timetrackingWorkspaceManagementOperations: TimetrackingWorkspaceManagementOperations =
   {
@@ -86,7 +86,7 @@ export const timetrackingWorkspaceManagementOperations: TimetrackingWorkspaceMan
         clientId: action.input.clientId ?? null,
         color: action.input.color,
         billable: action.input.billable,
-        hourlyRate: null,
+        hourlyRate: action.input.hourlyRate ?? null,
         status: "ACTIVE",
       });
     },
@@ -98,6 +98,8 @@ export const timetrackingWorkspaceManagementOperations: TimetrackingWorkspaceMan
       if (action.input.color) project.color = action.input.color;
       if (action.input.billable !== undefined && action.input.billable !== null)
         project.billable = action.input.billable;
+      if (action.input.hourlyRate !== undefined && action.input.hourlyRate !== null)
+        project.hourlyRate = action.input.hourlyRate;
     },
     archiveProjectOperation(state, action) {
       const project = state.projects.find((p) => p.id === action.input.id);

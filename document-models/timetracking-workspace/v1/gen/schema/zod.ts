@@ -75,6 +75,7 @@ export function AddProjectInputSchema(): z.ZodObject<
     billable: z.boolean(),
     clientId: z.string().nullish(),
     color: z.string(),
+    hourlyRate: z.number().nullish(),
     id: z.string(),
     name: z.string(),
   });
@@ -195,6 +196,7 @@ export function UpdateProjectInputSchema(): z.ZodObject<
     billable: z.boolean().nullish(),
     clientId: z.string().nullish(),
     color: z.string().nullish(),
+    hourlyRate: z.number().nullish(),
     id: z.string(),
     name: z.string().nullish(),
   });

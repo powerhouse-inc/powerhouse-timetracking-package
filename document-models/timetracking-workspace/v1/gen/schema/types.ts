@@ -80,6 +80,7 @@ export type AddProjectInput = {
   billable: Scalars["Boolean"]["input"];
   clientId?: InputMaybe<Scalars["OID"]["input"]>;
   color: Scalars["String"]["input"];
+  hourlyRate?: InputMaybe<Scalars["Amount_Money"]["input"]>;
   id: Scalars["OID"]["input"];
   name: Scalars["String"]["input"];
 };
@@ -160,6 +161,7 @@ export type UpdateProjectInput = {
   billable?: InputMaybe<Scalars["Boolean"]["input"]>;
   clientId?: InputMaybe<Scalars["OID"]["input"]>;
   color?: InputMaybe<Scalars["String"]["input"]>;
+  hourlyRate?: InputMaybe<Scalars["Amount_Money"]["input"]>;
   id: Scalars["OID"]["input"];
   name?: InputMaybe<Scalars["String"]["input"]>;
 };

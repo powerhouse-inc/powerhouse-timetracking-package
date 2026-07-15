@@ -175,7 +175,7 @@
               "id": "op-add-project",
               "name": "ADD_PROJECT",
               "description": "",
-              "schema": "input AddProjectInput {\n  id: OID!\n  name: String!\n  clientId: OID\n  color: String!\n  billable: Boolean!\n}",
+              "schema": "input AddProjectInput {\n  id: OID!\n  name: String!\n  clientId: OID\n  color: String!\n  billable: Boolean!\n  hourlyRate: Amount_Money\n}",
               "template": "",
               "reducer": "if (state.projects.some((p) => p.id === action.input.id)) {\n  throw new DuplicateProjectError(\"Project id already exists\");\n}\nif (action.input.clientId && !state.clients.some((c) => c.id === action.input.clientId)) {\n  throw new ClientNotFoundError(\"Client not found\");\n}\nstate.projects.push({\n  id: action.input.id,\n  name: action.input.name,\n  clientId: action.input.clientId ?? null,\n  color: action.input.color,\n  billable: action.input.billable,\n  hourlyRate: null,\n  status: \"ACTIVE\",\n});",
               "errors": [
@@ -201,7 +201,7 @@
               "id": "op-update-project",
               "name": "UPDATE_PROJECT",
               "description": "",
-              "schema": "input UpdateProjectInput {\n  id: OID!\n  name: String\n  clientId: OID\n  color: String\n  billable: Boolean\n}",
+              "schema": "input UpdateProjectInput {\n  id: OID!\n  name: String\n  clientId: OID\n  color: String\n  billable: Boolean\n  hourlyRate: Amount_Money\n}",
               "template": "",
               "reducer": "const project = state.projects.find((p) => p.id === action.input.id);\nif (!project) throw new ProjectNotFoundError(\"Project not found\");\nif (action.input.name) project.name = action.input.name;\nif (action.input.clientId) project.clientId = action.input.clientId;\nif (action.input.color) project.color = action.input.color;\nif (action.input.billable !== undefined && action.input.billable !== null) project.billable = action.input.billable;",
               "errors": [
