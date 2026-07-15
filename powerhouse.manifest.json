@@ -16,8 +16,40 @@
       "name": "TimetrackingWorkspace"
     },
     {
-      "name": "Lead Funnel",
-      "id": "crm/lead-funnel"
+      "id": "crm/lead-funnel",
+      "name": "Lead Funnel"
+    },
+    {
+      "id": "powerhouse/scopeofwork",
+      "name": "ScopeOfWork"
+    },
+    {
+      "id": "powerhouse/invoice",
+      "name": "Invoice"
+    },
+    {
+      "id": "powerhouse/billing-statement",
+      "name": "Billing Statement"
+    },
+    {
+      "id": "powerhouse/accounts",
+      "name": "Accounts"
+    },
+    {
+      "id": "powerhouse/account-transactions",
+      "name": "AccountTransactions"
+    },
+    {
+      "id": "powerhouse/expense-report",
+      "name": "ExpenseReport"
+    },
+    {
+      "id": "powerhouse/snapshot-report",
+      "name": "Snapshot Report"
+    },
+    {
+      "name": "OperationalHubProfile",
+      "id": "powerhouse/operational-hub-profile"
     }
   ],
   "apps": [],

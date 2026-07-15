@@ -1,3 +1,11 @@
+export { AccountTransactions as AccountTransactionsV1 } from "./account-transactions/v1/module.js";
+export { Accounts as AccountsV1 } from "./accounts/v1/module.js";
+export { BillingStatement as BillingStatementV1 } from "./billing-statement/v1/module.js";
+export { ExpenseReport as ExpenseReportV1 } from "./expense-report/v1/module.js";
+export { Invoice as InvoiceV1 } from "./invoice/v1/module.js";
 export { LeadFunnel as LeadFunnelV1 } from "./lead-funnel/v1/module.js";
+export { OperationalHubProfile as OperationalHubProfileV1 } from "./operational-hub-profile/v1/module.js";
+export { ScopeOfWork as ScopeOfWorkV1 } from "./scope-of-work/v1/module.js";
+export { SnapshotReport as SnapshotReportV1 } from "./snapshot-report/v1/module.js";
 export { Timesheet as TimesheetV1 } from "./timesheet/v1/module.js";
 export { TimetrackingWorkspace as TimetrackingWorkspaceV1 } from "./timetracking-workspace/v1/module.js";

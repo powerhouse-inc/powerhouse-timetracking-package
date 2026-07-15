@@ -1,0 +1,81 @@
+{
+  "id": "powerhouse/accounts",
+  "name": "Accounts",
+  "author": {
+    "name": "Powerhouse",
+    "website": "https://powerhouse.inc"
+  },
+  "extension": "",
+  "description": "Document model for managing accounts with KYC/AML status tracking",
+  "specifications": [
+    {
+      "state": {
+        "local": {
+          "schema": "",
+          "examples": [],
+          "initialValue": ""
+        },
+        "global": {
+          "schema": "type AccountsState {\n   accounts: [AccountEntry!]!\n}\n\ntype AccountEntry {\n    id: OID!\n    account: String!\n    name: String!\n    budgetPath: String\n    accountTransactionsId: PHID\n    chain: [String!]\n    type: AccountType!\n    owners: [String!]\n    KycAmlStatus: KycAmlStatusType\n}\n\nenum AccountType {\n    Source\n    Internal\n    Destination\n    External\n}\n\nenum KycAmlStatusType {\n    PASSED\n    PENDING\n    FAILED\n}\n\nenum AccountTypeInput {\n  Source\n  Internal\n  Destination\n  External\n}\n\nenum KycAmlStatusTypeInput {\n  PASSED\n  PENDING\n  FAILED\n}",
+          "examples": [],
+          "initialValue": "{\n  \"accounts\": []\n}"
+        }
+      },
+      "modules": [
+        {
+          "id": "e89202e8-4f6e-4ca3-a326-a5846e909d83",
+          "name": "accounts",
+          "description": "",
+          "operations": [
+            {
+              "id": "bd25e778-a5d2-4d11-aec2-189370b9c5e1",
+              "name": "ADD_ACCOUNT",
+              "description": "",
+              "schema": "input AddAccountInput {\n  id: OID!\n  account: String!\n  name: String!\n  budgetPath: String\n  accountTransactionsId: PHID\n  chain: [String!]\n  type: AccountTypeInput!\n  owners: [String!]\n  KycAmlStatus: KycAmlStatusTypeInput\n}",
+              "template": "",
+              "reducer": "",
+              "errors": [],
+              "examples": [],
+              "scope": "global"
+            },
+            {
+              "id": "0379b6aa-3494-4ec5-8813-11e4b3d9b6b3",
+              "name": "UPDATE_ACCOUNT",
+              "description": "",
+              "schema": "input UpdateAccountInput {\n    id: OID!\n    account: String\n    name: String\n    budgetPath: String\n    accountTransactionsId: PHID\n    chain: [String!]\n    type: AccountTypeInput\n    owners: [String!]\n    KycAmlStatus: KycAmlStatusTypeInput\n}",
+              "template": "",
+              "reducer": "",
+              "errors": [],
+              "examples": [],
+              "scope": "global"
+            },
+            {
+              "id": "d5de4a42-c20d-47a4-986e-1689eb174592",
+              "name": "DELETE_ACCOUNT",
+              "description": "",
+              "schema": "input DeleteAccountInput {\n    id: OID!\n}",
+              "template": "",
+              "reducer": "",
+              "errors": [],
+              "examples": [],
+              "scope": "global"
+            },
+            {
+              "id": "884e8797-1f49-482e-af22-51854356a1aa",
+              "name": "UPDATE_KYC_STATUS",
+              "description": "",
+              "schema": "input UpdateKycStatusInput {\n    id: OID!\n    KycAmlStatus: KycAmlStatusTypeInput!\n}",
+              "template": "",
+              "reducer": "",
+              "errors": [],
+              "examples": [],
+              "scope": "global"
+            }
+          ]
+        }
+      ],
+      "version": 1,
+      "changeLog": []
+    }
+  ]
+}
