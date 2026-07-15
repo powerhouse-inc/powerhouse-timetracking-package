@@ -106,8 +106,8 @@ export function StatementsView() {
       ) : list.length === 0 && !adding ? (
         <EmptyState>No billing statements yet.</EmptyState>
       ) : (
-        <div className="tt-card overflow-hidden">
-          <div className="grid grid-cols-[1fr_120px_120px_140px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
+        <div className="tt-card overflow-x-auto">
+          <div className="grid min-w-[560px] grid-cols-[1fr_120px_120px_140px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
             <span>Contributor</span>
             <span>Cash</span>
             <span>POWT</span>
@@ -119,7 +119,7 @@ export function StatementsView() {
               <button
                 key={st.id}
                 onClick={() => setOpenId(st.id)}
-                className="grid w-full grid-cols-[1fr_120px_120px_140px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-left text-sm last:border-0 hover:bg-ink-700/40"
+                className="grid w-full min-w-[560px] grid-cols-[1fr_120px_120px_140px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-left text-sm last:border-0 hover:bg-ink-700/40"
               >
                 <span className="truncate font-medium text-mist-100">
                   {st.contributor ?? "—"}

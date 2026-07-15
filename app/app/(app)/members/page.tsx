@@ -70,8 +70,8 @@ export default function MembersPage() {
       {members.length === 0 ? (
         <EmptyState>No members yet.</EmptyState>
       ) : (
-        <div className="tt-card overflow-hidden">
-          <div className="grid grid-cols-[1fr_160px_130px_110px_60px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
+        <div className="tt-card overflow-x-auto">
+          <div className="grid min-w-[620px] grid-cols-[1fr_160px_130px_110px_60px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
             <span>Name</span>
             <span>Access rights</span>
             <span>Status</span>
@@ -81,7 +81,7 @@ export default function MembersPage() {
           {members.map((m) => (
             <div
               key={m.localId}
-              className={`grid grid-cols-[1fr_160px_130px_110px_60px] items-center gap-3 border-b border-ink-600/40 px-5 py-2.5 last:border-0 ${
+              className={`grid min-w-[620px] grid-cols-[1fr_160px_130px_110px_60px] items-center gap-3 border-b border-ink-600/40 px-5 py-2.5 last:border-0 ${
                 m.status === "ARCHIVED" ? "opacity-50" : ""
               }`}
             >

@@ -107,7 +107,7 @@ export default function ReportsPage() {
         }
       />
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         <Stat label="Total" value={formatHours(totalSeconds)} />
         <Stat
           label="Billable"
@@ -120,14 +120,14 @@ export default function ReportsPage() {
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-5 gap-4">
-        <div className="tt-card col-span-3 p-5">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
+        <div className="tt-card p-5 lg:col-span-3">
           <div className="mb-4 text-sm font-semibold text-mist-200">
             This week
           </div>
           <BarChart data={byDay} />
         </div>
-        <div className="tt-card col-span-2 p-5">
+        <div className="tt-card p-5 lg:col-span-2">
           <div className="mb-4 text-sm font-semibold text-mist-200">
             By project
           </div>

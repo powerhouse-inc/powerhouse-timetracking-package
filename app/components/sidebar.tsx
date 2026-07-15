@@ -66,14 +66,24 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
 
 const MANAGERIAL: Role[] = ["ADMIN", "MANAGER", "BILLING"];
 
-export function Sidebar() {
+export function Sidebar({
+  open = false,
+  onClose,
+}: {
+  open?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const role = useMyRole(user?.address);
   const canManage = role ? MANAGERIAL.includes(role) : false;
 
   return (
-    <aside className="relative z-10 flex w-60 flex-none flex-col border-r border-ink-600/60 bg-ink-900/70 backdrop-blur-sm">
+    <aside
+      className={`fixed inset-y-0 left-0 z-50 flex w-64 max-w-[82vw] flex-none flex-col border-r border-ink-600/60 bg-ink-900/95 backdrop-blur-sm transition-transform duration-200 md:static md:z-10 md:w-60 md:translate-x-0 md:bg-ink-900/70 ${
+        open ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
       <div className="flex items-center gap-2.5 px-5 py-5">
         <span className="grid size-8 place-items-center rounded-lg bg-magenta text-ink-950 shadow-glow">
           ⬡
@@ -103,6 +113,7 @@ export function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={onClose}
                     className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                       active
                         ? "bg-ink-700 text-mist-100"

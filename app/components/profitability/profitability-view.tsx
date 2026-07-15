@@ -46,8 +46,8 @@ export function ProfitabilityView() {
           and it will show here.
         </EmptyState>
       ) : (
-        <div className="tt-card overflow-hidden">
-          <div className="grid grid-cols-[1fr_140px_140px_140px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
+        <div className="tt-card overflow-x-auto">
+          <div className="grid min-w-[560px] grid-cols-[1fr_140px_140px_140px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
             <span>Client</span>
             <span className="text-right">Tracked value</span>
             <span className="text-right">Invoiced</span>
@@ -59,7 +59,7 @@ export function ProfitabilityView() {
                 onClick={() =>
                   setExpanded((cur) => (cur === c.clientId ? null : c.clientId))
                 }
-                className="grid w-full grid-cols-[1fr_140px_140px_140px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-left text-sm hover:bg-ink-700/40"
+                className="grid w-full min-w-[560px] grid-cols-[1fr_140px_140px_140px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-left text-sm hover:bg-ink-700/40"
               >
                 <span className="flex items-center gap-2 font-medium text-mist-100">
                   <span className="text-mist-500">
@@ -83,7 +83,7 @@ export function ProfitabilityView() {
                 c.projects.map((p) => (
                   <div
                     key={p.projectId}
-                    className="grid grid-cols-[1fr_140px_140px_140px] items-center gap-3 border-b border-ink-600/30 bg-ink-900/40 px-5 py-2 pl-10 text-xs text-mist-400"
+                    className="grid min-w-[560px] grid-cols-[1fr_140px_140px_140px] items-center gap-3 border-b border-ink-600/30 bg-ink-900/40 px-5 py-2 pl-10 text-xs text-mist-400"
                   >
                     <span className="truncate">
                       {p.name} · {p.billableHours.toFixed(1)}h billable @{" "}

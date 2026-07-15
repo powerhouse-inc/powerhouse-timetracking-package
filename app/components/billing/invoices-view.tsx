@@ -66,8 +66,8 @@ export function InvoicesView() {
       ) : list.length === 0 && !adding ? (
         <EmptyState>No invoices yet.</EmptyState>
       ) : (
-        <div className="tt-card overflow-hidden">
-          <div className="grid grid-cols-[120px_1fr_1fr_120px_140px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
+        <div className="tt-card overflow-x-auto">
+          <div className="grid min-w-[640px] grid-cols-[120px_1fr_1fr_120px_140px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
             <span>Invoice #</span>
             <span>Issuer</span>
             <span>Payer</span>
@@ -87,7 +87,7 @@ export function InvoicesView() {
               <button
                 key={inv.id}
                 onClick={() => setOpenId(inv.id)}
-                className="grid w-full grid-cols-[120px_1fr_1fr_120px_140px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-left text-sm last:border-0 hover:bg-ink-700/40"
+                className="grid w-full min-w-[640px] grid-cols-[120px_1fr_1fr_120px_140px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-left text-sm last:border-0 hover:bg-ink-700/40"
               >
                 <span className="font-medium text-mist-100">
                   {inv.invoiceNo || "—"}

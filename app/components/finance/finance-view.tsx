@@ -107,7 +107,7 @@ function AccountsTab() {
   return (
     <div className="tt-card overflow-x-auto">
       <div className="min-w-[880px]">
-        <div className="grid grid-cols-[1.4fr_1.3fr_120px_120px_1fr_1.4fr] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
+        <div className="grid min-w-[820px] grid-cols-[1.4fr_1.3fr_120px_120px_1fr_1.4fr] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
           <span>Name</span>
           <span>Address</span>
           <span>Type</span>
@@ -121,7 +121,7 @@ function AccountsTab() {
           return (
             <div
               key={a.id}
-              className="grid grid-cols-[1.4fr_1.3fr_120px_120px_1fr_1.4fr] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-sm last:border-0"
+              className="grid min-w-[820px] grid-cols-[1.4fr_1.3fr_120px_120px_1fr_1.4fr] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-sm last:border-0"
             >
               <span className="truncate font-medium text-mist-100">
                 {a.name || "—"}
@@ -198,7 +198,7 @@ function TransactionsCard({ doc }: { doc: AccountTransactionsDoc }) {
       ) : (
         <div className="overflow-x-auto">
           <div className="min-w-[860px]">
-            <div className="grid grid-cols-[110px_1.3fr_1fr_1.6fr_120px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
+            <div className="grid min-w-[760px] grid-cols-[110px_1.3fr_1fr_1.6fr_120px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
               <span>Direction</span>
               <span>Counterparty</span>
               <span>Amount</span>
@@ -208,7 +208,7 @@ function TransactionsCard({ doc }: { doc: AccountTransactionsDoc }) {
             {doc.transactions.map((t) => (
               <div
                 key={t.id}
-                className="grid grid-cols-[110px_1.3fr_1fr_1.6fr_120px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-sm last:border-0"
+                className="grid min-w-[760px] grid-cols-[110px_1.3fr_1fr_1.6fr_120px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-sm last:border-0"
               >
                 <Chip
                   label={t.direction === "INFLOW" ? "Inflow" : "Outflow"}
@@ -255,7 +255,7 @@ function ExpenseReportsTab() {
   return (
     <div className="tt-card overflow-x-auto">
       <div className="min-w-[820px]">
-        <div className="grid grid-cols-[1.4fr_1.4fr_90px_140px_140px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
+        <div className="grid min-w-[680px] grid-cols-[1.4fr_1.4fr_90px_140px_140px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
           <span>Report</span>
           <span>Period</span>
           <span>Wallets</span>
@@ -267,7 +267,7 @@ function ExpenseReportsTab() {
           return (
             <div
               key={r.id}
-              className="grid grid-cols-[1.4fr_1.4fr_90px_140px_140px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-sm last:border-0"
+              className="grid min-w-[680px] grid-cols-[1.4fr_1.4fr_90px_140px_140px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-sm last:border-0"
             >
               <span className="flex items-center gap-2 min-w-0">
                 <span className="truncate font-medium text-mist-100">
@@ -304,7 +304,7 @@ function SnapshotReportsTab() {
   return (
     <div className="tt-card overflow-x-auto">
       <div className="min-w-[820px]">
-        <div className="grid grid-cols-[1.6fr_1.4fr_110px_140px_140px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
+        <div className="grid min-w-[720px] grid-cols-[1.6fr_1.4fr_110px_140px_140px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
           <span>Report</span>
           <span>Period</span>
           <span>Accounts</span>
@@ -314,7 +314,7 @@ function SnapshotReportsTab() {
         {list.map((r) => (
           <div
             key={r.id}
-            className="grid grid-cols-[1.6fr_1.4fr_110px_140px_140px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-sm last:border-0"
+            className="grid min-w-[720px] grid-cols-[1.6fr_1.4fr_110px_140px_140px] items-center gap-3 border-b border-ink-600/40 px-5 py-3 text-sm last:border-0"
           >
             <span className="truncate font-medium text-mist-100">
               {r.reportName || r.name}

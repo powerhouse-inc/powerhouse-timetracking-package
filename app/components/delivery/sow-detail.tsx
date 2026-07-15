@@ -134,7 +134,7 @@ export function SowDetail({ sow }: { sow: ScopeOfWorkDoc }) {
 
       {/* Deliverables */}
       <section>
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-mist-200">
             Deliverables ({sow.deliverables.length})
           </h2>
@@ -150,7 +150,7 @@ export function SowDetail({ sow }: { sow: ScopeOfWorkDoc }) {
           )}
           {sow.deliverables.map((d) => (
             <div key={d.id} className="px-5 py-3">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-mist-100">
                     {d.code ? `${d.code} · ` : ""}
@@ -195,8 +195,8 @@ export function SowDetail({ sow }: { sow: ScopeOfWorkDoc }) {
                   ))}
                 </select>
               </div>
-              <div className="mt-2 flex items-center gap-3">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-700">
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <div className="h-1.5 min-w-[120px] flex-1 overflow-hidden rounded-full bg-ink-700">
                   <div
                     className="h-full rounded-full bg-magenta transition-all"
                     style={{ width: `${d.progressPercent ?? 0}%` }}
@@ -240,7 +240,7 @@ export function SowDetail({ sow }: { sow: ScopeOfWorkDoc }) {
 
       {/* Projects */}
       <section>
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-mist-200">
             Projects ({sow.projects.length})
           </h2>

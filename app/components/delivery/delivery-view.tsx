@@ -72,8 +72,8 @@ export function DeliveryView() {
           <span className="text-magenta">+ New scope</span> to start.
         </EmptyState>
       ) : (
-        <div className="flex gap-6">
-          <div className="flex w-56 flex-none flex-col gap-1.5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+          <div className="flex flex-none flex-col gap-1.5 lg:w-56">
             {list.map((s) => {
               const active = s.id === selectedId;
               return (

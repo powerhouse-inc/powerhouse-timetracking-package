@@ -99,8 +99,8 @@ export default function ProjectsPage() {
       {projects.length === 0 ? (
         <EmptyState>No projects yet. Add one above.</EmptyState>
       ) : (
-        <div className="tt-card overflow-hidden">
-          <div className="grid grid-cols-[1fr_160px_90px_110px_100px_60px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
+        <div className="tt-card overflow-x-auto">
+          <div className="grid min-w-[720px] grid-cols-[1fr_160px_90px_110px_100px_60px] gap-3 border-b border-ink-600/60 px-5 py-2.5 text-[11px] uppercase tracking-wider text-mist-400">
             <span>Project</span>
             <span>Client</span>
             <span>Rate/h</span>
@@ -111,7 +111,7 @@ export default function ProjectsPage() {
           {projects.map((p) => (
             <div
               key={p.localId}
-              className={`grid grid-cols-[1fr_160px_90px_110px_100px_60px] items-center gap-3 border-b border-ink-600/40 px-5 py-2.5 last:border-0 ${
+              className={`grid min-w-[720px] grid-cols-[1fr_160px_90px_110px_100px_60px] items-center gap-3 border-b border-ink-600/40 px-5 py-2.5 last:border-0 ${
                 p.status === "ARCHIVED" ? "opacity-50" : ""
               }`}
             >
