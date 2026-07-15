@@ -7,8 +7,15 @@ import {
   STATEMENT_STATUS,
   formatAmount,
   statusMeta,
+  trackedLines,
 } from "@/lib/billing";
-import { useBillingStatements, useRefresh, useWorkspace } from "@/lib/hooks";
+import {
+  useBillingStatements,
+  useRefresh,
+  useTimesheets,
+  useWorkspace,
+} from "@/lib/hooks";
+import { toast } from "@/lib/toast";
 import type {
   BillingStatementDoc,
   BillingStatementStatus,
@@ -152,6 +159,8 @@ function StatementDetail({
   onClose: () => void;
   onChange: () => void;
 }) {
+  const { data: workspace } = useWorkspace();
+  const { data: timesheets } = useTimesheets();
   const run = async (p: Promise<void>) => {
     await p;
     onChange();
@@ -161,6 +170,31 @@ function StatementDetail({
   const [unit, setUnit] = useState<BillingUnit>("HOUR");
   const [cash, setCash] = useState("");
   const [pwt, setPwt] = useState("");
+
+  const prefill = async () => {
+    const member = (workspace?.members ?? []).find(
+      (m) => m.name.toLowerCase() === (statement.contributor ?? "").toLowerCase(),
+    );
+    const sheets = (timesheets ?? []).filter(
+      (s) => member?.address && s.ownerAddress === member.address,
+    );
+    const lines = trackedLines(sheets, workspace?.projects ?? []);
+    if (lines.length === 0) {
+      toast("No tracked hours found for this contributor.", "info");
+      return;
+    }
+    for (const l of lines) {
+      await statementApi.addLineItem(statement.id, {
+        description: l.description,
+        quantity: l.hours,
+        unit: "HOUR",
+        unitPriceCash: l.rate,
+        unitPricePwt: 0,
+      });
+    }
+    onChange();
+    toast(`Added ${lines.length} line item(s) from tracked hours.`, "success");
+  };
 
   const addItem = async () => {
     if (!desc.trim()) return;
@@ -221,7 +255,16 @@ function StatementDetail({
           </div>
 
           <div>
-            <label className="tt-label">Line items</label>
+            <div className="mb-1 flex items-center gap-3">
+              <label className="tt-label mb-0">Line items</label>
+              <button
+                className="text-xs text-magenta hover:underline"
+                onClick={prefill}
+                title="Add a line item per project this contributor tracked hours on"
+              >
+                ↧ Prefill from tracked hours
+              </button>
+            </div>
             <div className="tt-card divide-y divide-ink-600/40">
               {statement.lineItems.length === 0 && (
                 <div className="px-4 py-3 text-sm text-mist-400">No items.</div>

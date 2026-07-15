@@ -2,8 +2,20 @@
 
 import { useState } from "react";
 import { createInvoice, invoiceApi } from "@/lib/api";
-import { CURRENCIES, INVOICE_STATUS, formatAmount, statusMeta } from "@/lib/billing";
-import { useInvoices, useRefresh, useWorkspace } from "@/lib/hooks";
+import {
+  CURRENCIES,
+  INVOICE_STATUS,
+  formatAmount,
+  statusMeta,
+  trackedLines,
+} from "@/lib/billing";
+import {
+  useInvoices,
+  useRefresh,
+  useTimesheets,
+  useWorkspace,
+} from "@/lib/hooks";
+import { toast } from "@/lib/toast";
 import type { InvoiceDoc, InvoiceStatus } from "@/lib/types";
 import { EmptyState, PageHeader } from "@/components/ui";
 
@@ -190,6 +202,8 @@ function InvoiceDetail({
   onClose: () => void;
   onChange: () => void;
 }) {
+  const { data: workspace } = useWorkspace();
+  const { data: timesheets } = useTimesheets();
   const run = async (p: Promise<void>) => {
     await p;
     onChange();
@@ -198,6 +212,34 @@ function InvoiceDetail({
   const [qty, setQty] = useState("1");
   const [price, setPrice] = useState("");
   const [tax, setTax] = useState("0");
+
+  const prefill = async () => {
+    const client = (workspace?.clients ?? []).find(
+      (c) => c.name.toLowerCase() === (invoice.payerName ?? "").toLowerCase(),
+    );
+    const projects = (workspace?.projects ?? []).filter((p) =>
+      client ? p.clientId === client.localId : false,
+    );
+    const lines = trackedLines(timesheets ?? [], projects);
+    if (lines.length === 0) {
+      toast(
+        "No tracked hours found for this payer's workspace projects.",
+        "info",
+      );
+      return;
+    }
+    for (const l of lines) {
+      await invoiceApi.addLineItem(invoice.id, {
+        description: `${l.description} (tracked hours)`,
+        quantity: l.hours,
+        unitPriceTaxExcl: l.rate,
+        taxPercent: 0,
+        currency: invoice.currency,
+      });
+    }
+    onChange();
+    toast(`Added ${lines.length} line item(s) from tracked hours.`, "success");
+  };
 
   const addItem = async () => {
     if (!desc.trim() || price.trim() === "") return;
@@ -258,7 +300,16 @@ function InvoiceDetail({
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label className="tt-label mb-0">Line items</label>
+              <div className="flex items-center gap-3">
+                <label className="tt-label mb-0">Line items</label>
+                <button
+                  className="text-xs text-magenta hover:underline"
+                  onClick={prefill}
+                  title="Add a line item per workspace project the payer has tracked hours on"
+                >
+                  ↧ Prefill from tracked hours
+                </button>
+              </div>
               <span className="text-sm font-semibold text-mist-100">
                 {formatAmount(invoice.totalPriceTaxIncl, invoice.currency)}
               </span>

@@ -69,6 +69,7 @@ export interface WorkspaceProject {
   clientName: string | null;
   color: string;
   billable: boolean;
+  hourlyRate: number | null;
   status: EntityStatus;
 }
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ensureLeadFunnel, leadApi } from "@/lib/api";
+import { convertLeadToProject, ensureLeadFunnel, leadApi } from "@/lib/api";
 import { useLeadFunnel, useRefresh, useWorkspace } from "@/lib/hooks";
+import { toast } from "@/lib/toast";
 import { PRIORITIES, STAGES, formatMoney, priorityColor } from "@/lib/sales";
 import type { Lead, LeadStage } from "@/lib/types";
 import { EmptyState, PageHeader } from "@/components/ui";
@@ -56,6 +57,26 @@ export function SalesBoard() {
     refresh();
     setCreating(false);
     return id;
+  };
+
+  const convert = async (lead: Lead) => {
+    const wsId = workspace?.id;
+    if (!wsId) {
+      toast("Create a workspace first (add a project or member).", "error");
+      return;
+    }
+    const { clientId } = await convertLeadToProject(wsId, {
+      clientId: lead.clientId,
+      clientName: lead.company,
+      projectName: lead.name,
+    });
+    if (docId) {
+      if (clientId && clientId !== lead.clientId)
+        await leadApi.updateLead(docId, lead.id, { clientId });
+      if (lead.stage !== "WON") await leadApi.moveLead(docId, lead.id, "WON");
+    }
+    refresh();
+    toast(`Created workspace project “${lead.name}”`, "success");
   };
 
   const drop = async (stage: LeadStage) => {
@@ -173,6 +194,7 @@ export function SalesBoard() {
           memberNames={memberNames}
           onClose={() => setOpenId(null)}
           onChange={refresh}
+          onConvert={() => convert(openLead)}
         />
       )}
     </>

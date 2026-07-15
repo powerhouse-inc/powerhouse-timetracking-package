@@ -92,7 +92,7 @@ const WORKSPACES_QUERY = `
               name
               members { id address did name avatarUrl role status }
               clients { id name status }
-              projects { id name clientId color billable status }
+              projects { id name clientId color billable hourlyRate status }
             }
           }
         }
@@ -120,6 +120,7 @@ interface WorkspaceItem {
         clientId: string | null;
         color: string;
         billable: boolean;
+        hourlyRate: number | null;
         status: WorkspaceProject["status"];
       }[];
     };
@@ -164,6 +165,7 @@ export async function fetchWorkspace(): Promise<WorkspaceDoc | null> {
       clientName: clientName(p.clientId),
       color: p.color,
       billable: p.billable,
+      hourlyRate: p.hourlyRate,
       status: p.status,
     })),
   };
@@ -461,6 +463,37 @@ export const leadApi = {
       input: { leadId, id: randomId(), timestamp: new Date().toISOString(), ...input },
     }),
 };
+
+/**
+ * Lifecycle: turn a won lead into billable work — ensure a workspace client
+ * exists, then create a workspace project linked to it (so time can be tracked
+ * against it). Returns the ids so the caller can link the lead back.
+ */
+export async function convertLeadToProject(
+  wsId: string,
+  input: { clientId: string | null; clientName: string | null; projectName: string },
+): Promise<{ clientId: string | null; projectId: string }> {
+  let clientId = input.clientId;
+  if (!clientId && input.clientName) {
+    clientId = randomId();
+    await mutate("TimetrackingWorkspace", "addClient", "docId: $docId, input: $input", {
+      docId: wsId,
+      input: { id: clientId, name: input.clientName },
+    });
+  }
+  const projectId = randomId();
+  await mutate("TimetrackingWorkspace", "addProject", "docId: $docId, input: $input", {
+    docId: wsId,
+    input: {
+      id: projectId,
+      name: input.projectName,
+      clientId: clientId || null,
+      color: "#e57cd8",
+      billable: true,
+    },
+  });
+  return { clientId, projectId };
+}
 
 /* ============================== delivery =============================== */
 

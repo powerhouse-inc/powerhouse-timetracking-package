@@ -21,6 +21,7 @@ export function LeadDetail({
   memberNames,
   onClose,
   onChange,
+  onConvert,
 }: {
   lead: Lead;
   docId: string;
@@ -29,6 +30,7 @@ export function LeadDetail({
   memberNames: string[];
   onClose: () => void;
   onChange: () => void;
+  onConvert: () => void;
 }) {
   const [note, setNote] = useState("");
   const [activityType, setActivityType] =
@@ -277,12 +279,21 @@ export function LeadDetail({
             </ul>
           </div>
 
-          <button
-            className="mt-2 self-start text-xs text-mist-400 hover:text-red-400"
-            onClick={remove}
-          >
-            Delete lead
-          </button>
+          <div className="mt-2 flex items-center justify-between">
+            <button
+              className="tt-btn-primary"
+              onClick={onConvert}
+              title="Create a workspace client + project from this lead and mark it won"
+            >
+              Convert to client + project
+            </button>
+            <button
+              className="text-xs text-mist-400 hover:text-red-400"
+              onClick={remove}
+            >
+              Delete lead
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,4 +1,9 @@
-import type { BillingStatementStatus, InvoiceStatus } from "./types";
+import type { TimesheetDoc } from "./api";
+import type {
+  BillingStatementStatus,
+  InvoiceStatus,
+  WorkspaceProject,
+} from "./types";
 
 export const INVOICE_STATUS: {
   key: InvoiceStatus;
@@ -44,3 +49,38 @@ export function formatAmount(value: number, currency = ""): string {
 }
 
 export const CURRENCIES = ["USD", "EUR", "USDS", "USDC", "DAI"];
+
+export interface TrackedLine {
+  description: string;
+  hours: number;
+  rate: number;
+}
+
+/**
+ * Aggregate tracked hours per project into billable line items. The caller
+ * decides which timesheets (e.g. one contributor's) and which projects
+ * (e.g. one client's) to include.
+ */
+export function trackedLines(
+  timesheets: TimesheetDoc[],
+  projects: WorkspaceProject[],
+): TrackedLine[] {
+  const included = new Set(projects.map((p) => p.localId));
+  const byId = new Map<string, number>();
+  for (const s of timesheets) {
+    for (const e of s.entries) {
+      if (!e.projectId || !included.has(e.projectId)) continue;
+      const h =
+        (new Date(e.end).getTime() - new Date(e.start).getTime()) / 3_600_000;
+      if (!Number.isFinite(h) || h <= 0) continue;
+      byId.set(e.projectId, (byId.get(e.projectId) ?? 0) + h);
+    }
+  }
+  return projects
+    .filter((p) => (byId.get(p.localId) ?? 0) > 0)
+    .map((p) => ({
+      description: p.name,
+      hours: Math.round((byId.get(p.localId) ?? 0) * 100) / 100,
+      rate: p.hourlyRate ?? 0,
+    }));
+}
