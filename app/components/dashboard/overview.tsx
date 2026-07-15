@@ -3,6 +3,7 @@
 import { useMemo, type ReactNode } from "react";
 import Link from "next/link";
 import { formatAmount } from "@/lib/billing";
+import { fmtDate, plural } from "@/lib/format";
 import {
   useBillingStatements,
   useInvoices,
@@ -114,7 +115,7 @@ export function Overview() {
         <Stat
           label="Open pipeline"
           value={formatAmount(stats.openPipeline)}
-          sub={`${stats.leadCount} leads`}
+          sub={plural(stats.leadCount, "lead")}
           href="/sales"
           accent="#e57cd8"
         />
@@ -196,7 +197,7 @@ export function Overview() {
               <Row
                 key={i.id}
                 left={i.invoiceNo || "—"}
-                sub={`${i.payerName ?? ""} · due ${i.dateDue}`}
+                sub={`${i.payerName ?? ""} · due ${fmtDate(i.dateDue)}`}
                 right={formatAmount(i.totalPriceTaxIncl, i.currency)}
                 danger
               />
@@ -235,7 +236,9 @@ function Stat({
           {label}
         </span>
       </div>
-      <div className="mt-2 text-2xl font-extrabold text-mist-100">{value}</div>
+      <div className="mt-2 text-2xl font-extrabold tabular-nums text-mist-100">
+        {value}
+      </div>
       <div className="text-xs text-mist-400">{sub}</div>
     </Link>
   );
@@ -280,7 +283,9 @@ function Row({
         <div className="truncate font-medium text-mist-100">{left}</div>
         <div className="truncate text-xs text-mist-400">{sub}</div>
       </div>
-      <span className={danger ? "text-red-400" : "text-mist-200"}>{right}</span>
+      <span className={`tabular-nums ${danger ? "text-red-400" : "text-mist-200"}`}>
+        {right}
+      </span>
     </div>
   );
 }

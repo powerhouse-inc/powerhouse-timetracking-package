@@ -16,6 +16,7 @@ import {
   useWorkspace,
 } from "@/lib/hooks";
 import { toast } from "@/lib/toast";
+import { dateInputValue, plural } from "@/lib/format";
 import type { InvoiceDoc, InvoiceStatus } from "@/lib/types";
 import { EmptyState, PageHeader } from "@/components/ui";
 
@@ -38,7 +39,7 @@ export function InvoicesView() {
     <>
       <PageHeader
         title="Invoices"
-        subtitle={`${list.length} invoices · ${formatAmount(total)} outstanding+`}
+        subtitle={`${plural(list.length, "invoice")} · ${formatAmount(total)} outstanding & unpaid`}
         action={
           <button className="tt-btn-primary" onClick={() => setAdding((v) => !v)}>
             + New invoice
@@ -97,7 +98,7 @@ export function InvoicesView() {
                 <span className="truncate text-mist-300">
                   {inv.payerName ?? "—"}
                 </span>
-                <span className="text-mist-200">
+                <span className="tabular-nums text-mist-200">
                   {formatAmount(inv.totalPriceTaxIncl, inv.currency)}
                 </span>
                 <span className="flex items-center gap-1.5">
@@ -440,7 +441,7 @@ function InvoiceDetail({
               <input
                 className="tt-input w-full"
                 type="date"
-                defaultValue={invoice.dateIssued ?? ""}
+                defaultValue={dateInputValue(invoice.dateIssued)}
                 onBlur={(e) =>
                   run(invoiceApi.editInvoice(invoice.id, { dateIssued: e.target.value }))
                 }
@@ -451,7 +452,7 @@ function InvoiceDetail({
               <input
                 className="tt-input w-full"
                 type="date"
-                defaultValue={invoice.dateDue ?? ""}
+                defaultValue={dateInputValue(invoice.dateDue)}
                 onBlur={(e) =>
                   run(invoiceApi.editInvoice(invoice.id, { dateDue: e.target.value }))
                 }

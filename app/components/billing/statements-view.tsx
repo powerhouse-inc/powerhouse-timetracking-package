@@ -16,6 +16,7 @@ import {
   useWorkspace,
 } from "@/lib/hooks";
 import { toast } from "@/lib/toast";
+import { plural } from "@/lib/format";
 import type {
   BillingStatementDoc,
   BillingStatementStatus,
@@ -57,7 +58,7 @@ export function StatementsView() {
     <>
       <PageHeader
         title="Billing Statements"
-        subtitle={`${list.length} statements`}
+        subtitle={plural(list.length, "statement")}
         action={
           <button className="tt-btn-primary" onClick={() => setAdding((v) => !v)}>
             + New statement
@@ -123,8 +124,7 @@ export function StatementsView() {
                 <span className="truncate font-medium text-mist-100">
                   {st.contributor ?? "—"}
                 </span>
-                <span className="text-mist-200">
-                  {formatAmount(st.totalCash, st.currency)}
+                <span className="tabular-nums text-mist-200">{formatAmount(st.totalCash, st.currency)}
                 </span>
                 <span className="text-mist-200">{formatAmount(st.totalPowt)} PWT</span>
                 <span

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { convertLeadToProject, ensureLeadFunnel, leadApi } from "@/lib/api";
 import { useLeadFunnel, useRefresh, useWorkspace } from "@/lib/hooks";
 import { toast } from "@/lib/toast";
+import { plural } from "@/lib/format";
 import { PRIORITIES, STAGES, formatMoney, priorityColor } from "@/lib/sales";
 import type { Lead, LeadStage } from "@/lib/types";
 import { EmptyState, PageHeader } from "@/components/ui";
@@ -93,7 +94,7 @@ export function SalesBoard() {
     <>
       <PageHeader
         title="Sales Pipeline"
-        subtitle={`${leads.length} leads · ${formatMoney(openValue)} open · ${formatMoney(wonValue)} won`}
+        subtitle={`${plural(leads.length, "lead")} · ${formatMoney(openValue)} open · ${formatMoney(wonValue)} won`}
         action={
           <button
             className="tt-btn-primary"

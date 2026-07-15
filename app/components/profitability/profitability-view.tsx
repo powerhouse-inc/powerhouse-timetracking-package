@@ -67,14 +67,14 @@ export function ProfitabilityView() {
                   </span>
                   {c.name}
                 </span>
-                <span className="text-right text-mist-200">
+                <span className="text-right tabular-nums text-mist-200">
                   {formatAmount(c.trackedValue)}
                 </span>
-                <span className="text-right text-mist-200">
+                <span className="text-right tabular-nums text-mist-200">
                   {formatAmount(c.invoiced)}
                 </span>
                 <span
-                  className={`text-right ${c.unbilled > 0 ? "text-magenta" : "text-mist-400"}`}
+                  className={`text-right tabular-nums ${c.unbilled > 0 ? "text-magenta" : "text-mist-400"}`}
                 >
                   {formatAmount(c.unbilled)}
                 </span>
@@ -121,7 +121,7 @@ function Tile({
           {label}
         </span>
       </div>
-      <div className="mt-2 text-2xl font-extrabold text-mist-100">{value}</div>
+      <div className="mt-2 text-2xl font-extrabold tabular-nums text-mist-100">{value}</div>
     </div>
   );
 }
