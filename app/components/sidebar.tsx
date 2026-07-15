@@ -15,7 +15,13 @@ interface NavItem {
 }
 
 const GROUPS: { heading: string; items: NavItem[] }[] = [
-  { heading: "Overview", items: [{ href: "/", label: "Dashboard", icon: "◆" }] },
+  {
+    heading: "Overview",
+    items: [
+      { href: "/", label: "Dashboard", icon: "◆" },
+      { href: "/my-work", label: "My Work", icon: "✦" },
+    ],
+  },
   { heading: "Track", items: [
     { href: "/calendar", label: "Calendar", icon: "▦" },
     { href: "/timer", label: "Timer", icon: "⏱" },

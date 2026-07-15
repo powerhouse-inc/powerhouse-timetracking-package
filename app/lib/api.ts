@@ -544,7 +544,7 @@ const SCOPES_QUERY = `
               title description status
               projects { id code title workspaceProjectId budget currency budgetType }
               deliverables {
-                id title code description status
+                id title code description owner status
                 budgetAnchor { project unit unitCost quantity margin }
                 workProgress {
                   __typename
@@ -579,6 +579,7 @@ export async function fetchScopesOfWork(): Promise<ScopeOfWorkDoc[]> {
         title: dl.title,
         code: dl.code,
         description: dl.description,
+        owner: dl.owner,
         status: dl.status,
         budgetAnchor: dl.budgetAnchor,
         progressPercent: normalizeProgress(dl.workProgress),
@@ -640,7 +641,7 @@ export const sowApi = {
   editDeliverable: (
     docId: string,
     id: string,
-    patch: { title?: string; status?: DeliverableStatus },
+    patch: { title?: string; status?: DeliverableStatus; owner?: string },
   ) =>
     mutate("ScopeOfWork", "editDeliverable", "docId: $docId, input: $input", {
       docId,

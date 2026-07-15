@@ -159,6 +159,25 @@ export function SowDetail({ sow }: { sow: ScopeOfWorkDoc }) {
                 </div>
                 <select
                   className="tt-input py-1 text-xs"
+                  value={d.owner ?? ""}
+                  onChange={(e) =>
+                    run(
+                      sowApi.editDeliverable(sow.id, d.id, {
+                        owner: e.target.value,
+                      }),
+                    )
+                  }
+                  title="Owner"
+                >
+                  <option value="">Unassigned</option>
+                  {(workspace?.members ?? []).map((m) => (
+                    <option key={m.name} value={m.name}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="tt-input py-1 text-xs"
                   value={d.status}
                   onChange={(e) =>
                     run(

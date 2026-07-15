@@ -161,6 +161,7 @@ export interface SowDeliverable {
   title: string;
   code: string;
   description: string;
+  owner: string | null;
   status: DeliverableStatus;
   /** normalized 0–100 completion, or null when unset */
   progressPercent: number | null;
