@@ -1,13 +1,22 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { LoginScreen } from "@/components/login-screen";
 import { Sidebar } from "@/components/sidebar";
 import { useAuth } from "@/lib/auth";
 
+// Horizontal "canvas" views use the full screen width on ultrawide monitors;
+// everything else keeps a readable cap so text and dashboards don't stretch.
+const FULL_BLEED = ["/sales", "/calendar"];
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, ready } = useAuth();
   const [navOpen, setNavOpen] = useState(false);
+  const pathname = usePathname();
+  const fullBleed = FULL_BLEED.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 
   if (!ready) {
     return (
@@ -56,7 +65,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </header>
 
         <main className="flex-1 overflow-x-hidden px-4 py-5 md:px-8 md:py-7">
-          <div className="mx-auto w-full max-w-[112rem] animate-fade-up">
+          <div
+            className={`mx-auto w-full animate-fade-up ${
+              fullBleed ? "" : "max-w-[112rem]"
+            }`}
+          >
             {children}
           </div>
         </main>
