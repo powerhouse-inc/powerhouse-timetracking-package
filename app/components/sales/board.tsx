@@ -142,7 +142,7 @@ export function SalesBoard() {
             return (
               <div
                 key={s.key}
-                className={`flex w-64 flex-none flex-col rounded-xl border transition ${
+                className={`flex min-w-[13rem] flex-1 flex-col rounded-xl border transition ${
                   dropStage === s.key
                     ? "border-magenta/70 bg-ink-800"
                     : "border-ink-600/50 bg-ink-800/40"

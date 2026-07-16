@@ -56,7 +56,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </header>
 
         <main className="flex-1 overflow-x-hidden px-4 py-5 md:px-8 md:py-7">
-          <div className="mx-auto max-w-7xl animate-fade-up">{children}</div>
+          <div className="mx-auto w-full max-w-[112rem] animate-fade-up">
+            {children}
+          </div>
         </main>
       </div>
     </div>
