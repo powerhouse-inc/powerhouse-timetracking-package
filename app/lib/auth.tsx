@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { RENOWN_URL } from "./config";
+import { addressFromDid, getAppDid } from "./renown";
 
 export interface Identity {
   address: string;
@@ -39,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const did = params.get("user");
     if (did) {
       const identity: Identity = {
-        address: did.toLowerCase(),
+        address: addressFromDid(did),
         name: shortDid(did),
         did,
       };
@@ -78,8 +79,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const startRenown = useCallback(() => {
     if (!RENOWN_URL) return;
-    const returnUrl = window.location.origin + window.location.pathname;
-    window.location.href = `${RENOWN_URL}/?returnUrl=${encodeURIComponent(returnUrl)}`;
+    // Renown needs the requesting app's DID (`connect`/`app`) to render its
+    // sign-in flow; it redirects back to `returnUrl` with `?user=<did:pkh…>`.
+    void (async () => {
+      const appDid = await getAppDid();
+      const returnUrl = window.location.origin + window.location.pathname;
+      const url = new URL(RENOWN_URL);
+      url.searchParams.set("connect", appDid);
+      url.searchParams.set("app", appDid);
+      url.searchParams.set("network", "eip155");
+      url.searchParams.set("chain", "1");
+      url.searchParams.set("returnUrl", returnUrl);
+      window.location.href = url.toString();
+    })();
   }, []);
 
   const value = useMemo<AuthValue>(
