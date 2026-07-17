@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-17
 **Author:** Frank Pfeift (with Claude)
-**Status:** Approved — ready for implementation plan
+**Status:** Implemented (model + app + public path); rollout to prod pending a go/no-go.
 
 ## Goal
 
