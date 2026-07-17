@@ -98,7 +98,10 @@ export const timetrackingWorkspaceManagementOperations: TimetrackingWorkspaceMan
       if (action.input.color) project.color = action.input.color;
       if (action.input.billable !== undefined && action.input.billable !== null)
         project.billable = action.input.billable;
-      if (action.input.hourlyRate !== undefined && action.input.hourlyRate !== null)
+      if (
+        action.input.hourlyRate !== undefined &&
+        action.input.hourlyRate !== null
+      )
         project.hourlyRate = action.input.hourlyRate;
     },
     archiveProjectOperation(state, action) {

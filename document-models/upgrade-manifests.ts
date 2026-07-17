@@ -12,6 +12,7 @@ import { leadFunnelUpgradeManifest } from "document-models/lead-funnel/upgrades"
 import { operationalHubProfileUpgradeManifest } from "document-models/operational-hub-profile/upgrades";
 import { scopeOfWorkUpgradeManifest } from "document-models/scope-of-work/upgrades";
 import { snapshotReportUpgradeManifest } from "document-models/snapshot-report/upgrades";
+import { surveyUpgradeManifest } from "document-models/survey/upgrades";
 import { timesheetUpgradeManifest } from "document-models/timesheet/upgrades";
 import { timetrackingWorkspaceUpgradeManifest } from "document-models/timetracking-workspace/upgrades";
 
@@ -25,6 +26,7 @@ export const upgradeManifests: UpgradeManifest<readonly number[]>[] = [
   operationalHubProfileUpgradeManifest,
   scopeOfWorkUpgradeManifest,
   snapshotReportUpgradeManifest,
+  surveyUpgradeManifest,
   timesheetUpgradeManifest,
   timetrackingWorkspaceUpgradeManifest,
 ];

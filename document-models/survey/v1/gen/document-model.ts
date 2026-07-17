@@ -1,0 +1,353 @@
+import type { DocumentModelGlobalState } from "document-model";
+
+export const documentModel: DocumentModelGlobalState = {
+  id: "powerhouse-ops/survey",
+  name: "Survey",
+  author: {
+    name: "Powerhouse",
+    website: "https://powerhouse.inc",
+  },
+  extension: "svy",
+  description:
+    "Generic survey / questionnaire: sections, typed questions, reusable templates, a public share link for anonymous responses, and response analytics.",
+  specifications: [
+    {
+      state: {
+        local: {
+          schema: "",
+          examples: [],
+          initialValue: "",
+        },
+        global: {
+          schema:
+            "enum SurveyKind {\n  SURVEY\n  TEMPLATE\n}\n\nenum SurveyStatus {\n  DRAFT\n  OPEN\n  CLOSED\n}\n\nenum QuestionType {\n  SHORT_TEXT\n  LONG_TEXT\n  SINGLE_SELECT\n  MULTI_SELECT\n  RATING\n  GRID\n}\n\nenum GridColumnType {\n  TEXT\n  SELECT\n}\n\ntype QuestionOption {\n  id: OID!\n  label: String!\n}\n\ntype RatingScale {\n  min: Int!\n  max: Int!\n  minLabel: String\n  maxLabel: String\n}\n\ntype GridColumn {\n  id: OID!\n  label: String!\n  type: GridColumnType!\n  options: [QuestionOption!]!\n}\n\ntype SurveySection {\n  id: OID!\n  title: String!\n  description: String\n}\n\ntype SurveyQuestion {\n  id: OID!\n  sectionId: OID!\n  type: QuestionType!\n  title: String!\n  helpText: String\n  required: Boolean!\n  options: [QuestionOption!]!\n  ratingScale: RatingScale\n  columns: [GridColumn!]!\n}\n\ntype GridCell {\n  columnId: OID!\n  text: String\n  optionId: OID\n}\n\ntype GridRow {\n  cells: [GridCell!]!\n}\n\ntype Answer {\n  questionId: OID!\n  text: String\n  optionIds: [OID!]!\n  rating: Int\n  rows: [GridRow!]!\n}\n\ntype SurveyResponse {\n  id: OID!\n  submittedAt: DateTime!\n  answers: [Answer!]!\n}\n\ntype SurveyState {\n  title: String!\n  description: String\n  kind: SurveyKind!\n  status: SurveyStatus!\n  shareToken: String\n  clientId: PHID\n  clientName: String\n  sections: [SurveySection!]!\n  questions: [SurveyQuestion!]!\n  responses: [SurveyResponse!]!\n  createdAt: DateTime\n  publishedAt: DateTime\n  closedAt: DateTime\n}",
+          examples: [],
+          initialValue:
+            '{\n  "title": "",\n  "description": null,\n  "kind": "SURVEY",\n  "status": "DRAFT",\n  "shareToken": null,\n  "clientId": null,\n  "clientName": null,\n  "sections": [],\n  "questions": [],\n  "responses": [],\n  "createdAt": null,\n  "publishedAt": null,\n  "closedAt": null\n}',
+        },
+      },
+      modules: [
+        {
+          id: "m-definition",
+          name: "definition",
+          description:
+            "Build the survey: title, description, kind, recipient, sections and questions.",
+          operations: [
+            {
+              id: "o-set-title",
+              name: "SET_TITLE",
+              description: "Set the survey title.",
+              schema: "input SetTitleInput {\n  title: String!\n}",
+              template: "Set the survey title.",
+              reducer: "state.title = action.input.title;",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-set-description",
+              name: "SET_DESCRIPTION",
+              description: "Set the survey description/intro text.",
+              schema: "input SetDescriptionInput {\n  description: String\n}",
+              template: "Set the survey description/intro text.",
+              reducer: "state.description = action.input.description || null;",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-set-kind",
+              name: "SET_SURVEY_KIND",
+              description:
+                "Mark the survey as a reusable TEMPLATE or a live SURVEY.",
+              schema: "input SetSurveyKindInput {\n  kind: SurveyKind!\n}",
+              template:
+                "Mark the survey as a reusable TEMPLATE or a live SURVEY.",
+              reducer: "state.kind = action.input.kind;",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-set-recipient",
+              name: "SET_RECIPIENT",
+              description:
+                "Associate the survey with a client/lead (cached name).",
+              schema:
+                "input SetRecipientInput {\n  clientId: PHID\n  clientName: String\n}",
+              template:
+                "Associate the survey with a client/lead (cached name).",
+              reducer:
+                "state.clientId = action.input.clientId || null;\nstate.clientName = action.input.clientName || null;",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-add-section",
+              name: "ADD_SECTION",
+              description: "Add a section.",
+              schema:
+                "input AddSectionInput {\n  id: OID!\n  title: String!\n  description: String\n}",
+              template: "Add a section.",
+              reducer:
+                "state.sections.push({\n  id: action.input.id,\n  title: action.input.title,\n  description: action.input.description || null,\n});",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-update-section",
+              name: "UPDATE_SECTION",
+              description: "Update a section title/description.",
+              schema:
+                "input UpdateSectionInput {\n  id: OID!\n  title: String\n  description: String\n}",
+              template: "Update a section title/description.",
+              reducer:
+                'const section = state.sections.find((s) => s.id === action.input.id);\nif (!section) {\n  throw new SectionNotFoundError(`Section ${action.input.id} not found`);\n}\nif (action.input.title) {\n  section.title = action.input.title;\n}\nif (typeof action.input.description === "string") {\n  section.description = action.input.description || null;\n}',
+              errors: [
+                {
+                  id: "e-section-not-found",
+                  name: "SectionNotFoundError",
+                  code: "SECTION_NOT_FOUND",
+                  description: "The referenced section does not exist.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-delete-section",
+              name: "DELETE_SECTION",
+              description: "Delete a section and its questions.",
+              schema: "input DeleteSectionInput {\n  id: OID!\n}",
+              template: "Delete a section and its questions.",
+              reducer:
+                "const index = state.sections.findIndex((s) => s.id === action.input.id);\nif (index === -1) {\n  throw new SectionNotFoundError(`Section ${action.input.id} not found`);\n}\nstate.sections.splice(index, 1);\nstate.questions = state.questions.filter((q) => q.sectionId !== action.input.id);",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-reorder-sections",
+              name: "REORDER_SECTIONS",
+              description: "Reorder sections by id.",
+              schema: "input ReorderSectionsInput {\n  order: [OID!]!\n}",
+              template: "Reorder sections by id.",
+              reducer:
+                "const byId = new Map(state.sections.map((s) => [s.id, s]));\nconst reordered = [];\nfor (const id of action.input.order) {\n  const section = byId.get(id);\n  if (!section) {\n    throw new SectionNotFoundError(`Section ${id} not found`);\n  }\n  reordered.push(section);\n  byId.delete(id);\n}\nfor (const section of byId.values()) {\n  reordered.push(section);\n}\nstate.sections = reordered;",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-add-question",
+              name: "ADD_QUESTION",
+              description: "Add a question to a section.",
+              schema:
+                "input AddQuestionInput {\n  id: OID!\n  sectionId: OID!\n  type: QuestionType!\n  title: String!\n  helpText: String\n  required: Boolean\n  options: [AddQuestionOptionInput!]\n  ratingScale: AddQuestionRatingScaleInput\n  columns: [AddQuestionColumnInput!]\n}\n\ninput AddQuestionOptionInput {\n  id: OID!\n  label: String!\n}\n\ninput AddQuestionRatingScaleInput {\n  min: Int!\n  max: Int!\n  minLabel: String\n  maxLabel: String\n}\n\ninput AddQuestionColumnInput {\n  id: OID!\n  label: String!\n  type: GridColumnType!\n  options: [AddQuestionOptionInput!]\n}",
+              template: "Add a question to a section.",
+              reducer:
+                "if (!state.sections.some((s) => s.id === action.input.sectionId)) {\n  throw new SectionNotFoundError(`Section ${action.input.sectionId} not found`);\n}\nstate.questions.push({\n  id: action.input.id,\n  sectionId: action.input.sectionId,\n  type: action.input.type,\n  title: action.input.title,\n  helpText: action.input.helpText || null,\n  required: action.input.required ?? false,\n  options: (action.input.options ?? []).map((o) => ({ id: o.id, label: o.label })),\n  ratingScale: action.input.ratingScale\n    ? {\n        min: action.input.ratingScale.min,\n        max: action.input.ratingScale.max,\n        minLabel: action.input.ratingScale.minLabel || null,\n        maxLabel: action.input.ratingScale.maxLabel || null,\n      }\n    : null,\n  columns: (action.input.columns ?? []).map((c) => ({\n    id: c.id,\n    label: c.label,\n    type: c.type,\n    options: (c.options ?? []).map((o) => ({ id: o.id, label: o.label })),\n  })),\n});",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-update-question",
+              name: "UPDATE_QUESTION",
+              description:
+                "Replace a question's type/title/config (id and section unchanged).",
+              schema:
+                "input UpdateQuestionInput {\n  id: OID!\n  type: QuestionType!\n  title: String!\n  helpText: String\n  required: Boolean\n  options: [UpdateQuestionOptionInput!]\n  ratingScale: UpdateQuestionRatingScaleInput\n  columns: [UpdateQuestionColumnInput!]\n}\n\ninput UpdateQuestionOptionInput {\n  id: OID!\n  label: String!\n}\n\ninput UpdateQuestionRatingScaleInput {\n  min: Int!\n  max: Int!\n  minLabel: String\n  maxLabel: String\n}\n\ninput UpdateQuestionColumnInput {\n  id: OID!\n  label: String!\n  type: GridColumnType!\n  options: [UpdateQuestionOptionInput!]\n}",
+              template:
+                "Replace a question's type/title/config (id and section unchanged).",
+              reducer:
+                "const question = state.questions.find((q) => q.id === action.input.id);\nif (!question) {\n  throw new QuestionNotFoundError(`Question ${action.input.id} not found`);\n}\nquestion.type = action.input.type;\nquestion.title = action.input.title;\nquestion.helpText = action.input.helpText || null;\nquestion.required = action.input.required ?? false;\nquestion.options = (action.input.options ?? []).map((o) => ({ id: o.id, label: o.label }));\nquestion.ratingScale = action.input.ratingScale\n  ? {\n      min: action.input.ratingScale.min,\n      max: action.input.ratingScale.max,\n      minLabel: action.input.ratingScale.minLabel || null,\n      maxLabel: action.input.ratingScale.maxLabel || null,\n    }\n  : null;\nquestion.columns = (action.input.columns ?? []).map((c) => ({\n  id: c.id,\n  label: c.label,\n  type: c.type,\n  options: (c.options ?? []).map((o) => ({ id: o.id, label: o.label })),\n}));",
+              errors: [
+                {
+                  id: "e-question-not-found",
+                  name: "QuestionNotFoundError",
+                  code: "QUESTION_NOT_FOUND",
+                  description: "The referenced question does not exist.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-delete-question",
+              name: "DELETE_QUESTION",
+              description: "Delete a question.",
+              schema: "input DeleteQuestionInput {\n  id: OID!\n}",
+              template: "Delete a question.",
+              reducer:
+                "const index = state.questions.findIndex((q) => q.id === action.input.id);\nif (index === -1) {\n  throw new QuestionNotFoundError(`Question ${action.input.id} not found`);\n}\nstate.questions.splice(index, 1);",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-move-question",
+              name: "MOVE_QUESTION",
+              description: "Reassign a question to a different section.",
+              schema:
+                "input MoveQuestionInput {\n  id: OID!\n  sectionId: OID!\n}",
+              template: "Reassign a question to a different section.",
+              reducer:
+                "const question = state.questions.find((q) => q.id === action.input.id);\nif (!question) {\n  throw new QuestionNotFoundError(`Question ${action.input.id} not found`);\n}\nif (!state.sections.some((s) => s.id === action.input.sectionId)) {\n  throw new SectionNotFoundError(`Section ${action.input.sectionId} not found`);\n}\nquestion.sectionId = action.input.sectionId;",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-reorder-questions",
+              name: "REORDER_QUESTIONS",
+              description:
+                "Reorder questions by id (flat order across sections).",
+              schema: "input ReorderQuestionsInput {\n  order: [OID!]!\n}",
+              template: "Reorder questions by id (flat order across sections).",
+              reducer:
+                "const byId = new Map(state.questions.map((q) => [q.id, q]));\nconst reordered = [];\nfor (const id of action.input.order) {\n  const question = byId.get(id);\n  if (!question) {\n    throw new QuestionNotFoundError(`Question ${id} not found`);\n  }\n  reordered.push(question);\n  byId.delete(id);\n}\nfor (const question of byId.values()) {\n  reordered.push(question);\n}\nstate.questions = reordered;",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+          ],
+        },
+        {
+          id: "m-publishing",
+          name: "publishing",
+          description:
+            "Publish, close, reopen and manage the public share link.",
+          operations: [
+            {
+              id: "o-publish",
+              name: "PUBLISH_SURVEY",
+              description:
+                "Publish the survey: open it for responses and store the share token.",
+              schema:
+                "input PublishSurveyInput {\n  shareToken: String!\n  publishedAt: DateTime!\n}",
+              template:
+                "Publish the survey: open it for responses and store the share token.",
+              reducer:
+                'if (state.kind === "TEMPLATE") {\n  throw new CannotPublishTemplateError("Templates cannot be published");\n}\nstate.status = "OPEN";\nstate.shareToken = action.input.shareToken;\nstate.publishedAt = action.input.publishedAt;\nstate.closedAt = null;',
+              errors: [
+                {
+                  id: "e-cannot-publish-template",
+                  name: "CannotPublishTemplateError",
+                  code: "CANNOT_PUBLISH_TEMPLATE",
+                  description:
+                    "A survey marked as a template cannot be published or reopened.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-close",
+              name: "CLOSE_SURVEY",
+              description: "Close the survey: stop accepting responses.",
+              schema: "input CloseSurveyInput {\n  closedAt: DateTime!\n}",
+              template: "Close the survey: stop accepting responses.",
+              reducer:
+                'state.status = "CLOSED";\nstate.closedAt = action.input.closedAt;',
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-reopen",
+              name: "REOPEN_SURVEY",
+              description: "Reopen a closed survey.",
+              schema: "input ReopenSurveyInput {\n  _: Boolean\n}",
+              template: "Reopen a closed survey.",
+              reducer:
+                'if (state.kind === "TEMPLATE") {\n  throw new CannotPublishTemplateError("Templates cannot be published");\n}\nstate.status = "OPEN";\nstate.closedAt = null;',
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-regen-token",
+              name: "REGENERATE_SHARE_TOKEN",
+              description:
+                "Rotate the public share token (revokes the old link).",
+              schema:
+                "input RegenerateShareTokenInput {\n  shareToken: String!\n}",
+              template: "Rotate the public share token (revokes the old link).",
+              reducer: "state.shareToken = action.input.shareToken;",
+              errors: [],
+              examples: [],
+              scope: "global",
+            },
+          ],
+        },
+        {
+          id: "m-responses",
+          name: "responses",
+          description: "Append and remove survey responses.",
+          operations: [
+            {
+              id: "o-add-response",
+              name: "ADD_RESPONSE",
+              description:
+                "Append a submitted response (only while the survey is OPEN).",
+              schema:
+                "input AddResponseInput {\n  id: OID!\n  submittedAt: DateTime!\n  answers: [AddResponseAnswerInput!]!\n}\n\ninput AddResponseAnswerInput {\n  questionId: OID!\n  text: String\n  optionIds: [OID!]\n  rating: Int\n  rows: [AddResponseRowInput!]\n}\n\ninput AddResponseRowInput {\n  cells: [AddResponseCellInput!]!\n}\n\ninput AddResponseCellInput {\n  columnId: OID!\n  text: String\n  optionId: OID\n}",
+              template:
+                "Append a submitted response (only while the survey is OPEN).",
+              reducer:
+                'if (state.status !== "OPEN") {\n  throw new SurveyNotOpenError("Survey is not accepting responses");\n}\nconst known = new Set(state.questions.map((q) => q.id));\nfor (const answer of action.input.answers) {\n  if (!known.has(answer.questionId)) {\n    throw new UnknownQuestionError(`Question ${answer.questionId} not found`);\n  }\n}\nstate.responses.push({\n  id: action.input.id,\n  submittedAt: action.input.submittedAt,\n  answers: action.input.answers.map((answer) => ({\n    questionId: answer.questionId,\n    text: answer.text || null,\n    optionIds: answer.optionIds ?? [],\n    rating: answer.rating ?? null,\n    rows: (answer.rows ?? []).map((row) => ({\n      cells: row.cells.map((cell) => ({\n        columnId: cell.columnId,\n        text: cell.text || null,\n        optionId: cell.optionId || null,\n      })),\n    })),\n  })),\n});',
+              errors: [
+                {
+                  id: "e-survey-not-open",
+                  name: "SurveyNotOpenError",
+                  code: "SURVEY_NOT_OPEN",
+                  description:
+                    "The survey is not currently accepting responses.",
+                  template: "",
+                },
+                {
+                  id: "e-unknown-question",
+                  name: "UnknownQuestionError",
+                  code: "UNKNOWN_QUESTION",
+                  description:
+                    "A submitted answer references a question that does not exist in the survey.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+            {
+              id: "o-delete-response",
+              name: "DELETE_RESPONSE",
+              description: "Remove a response (e.g. spam).",
+              schema: "input DeleteResponseInput {\n  id: OID!\n}",
+              template: "Remove a response (e.g. spam).",
+              reducer:
+                "const index = state.responses.findIndex((r) => r.id === action.input.id);\nif (index === -1) {\n  throw new ResponseNotFoundError(`Response ${action.input.id} not found`);\n}\nstate.responses.splice(index, 1);",
+              errors: [
+                {
+                  id: "e-response-not-found",
+                  name: "ResponseNotFoundError",
+                  code: "RESPONSE_NOT_FOUND",
+                  description: "The referenced response does not exist.",
+                  template: "",
+                },
+              ],
+              examples: [],
+              scope: "global",
+            },
+          ],
+        },
+      ],
+      version: 1,
+      changeLog: [],
+    },
+  ],
+};

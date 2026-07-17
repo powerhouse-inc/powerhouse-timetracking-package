@@ -1,0 +1,284 @@
+scalar Unknown
+scalar DateTime
+scalar Address
+scalar AttachmentRef
+scalar Amount_Tokens
+scalar EthereumAddress
+scalar EmailAddress
+scalar Amount_Percentage
+scalar Date
+scalar URL
+scalar Amount_Money
+scalar OLabel
+scalar Currency
+scalar PHID
+scalar OID
+scalar Amount_Fiat
+scalar Amount_Currency
+scalar Amount_Crypto
+scalar Amount
+scalar Upload
+
+enum SurveyKind {
+  SURVEY
+  TEMPLATE
+}
+
+enum SurveyStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum QuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  SINGLE_SELECT
+  MULTI_SELECT
+  RATING
+  GRID
+}
+
+enum GridColumnType {
+  TEXT
+  SELECT
+}
+
+type QuestionOption {
+  id: OID!
+  label: String!
+}
+
+type RatingScale {
+  min: Int!
+  max: Int!
+  minLabel: String
+  maxLabel: String
+}
+
+type GridColumn {
+  id: OID!
+  label: String!
+  type: GridColumnType!
+  options: [QuestionOption!]!
+}
+
+type SurveySection {
+  id: OID!
+  title: String!
+  description: String
+}
+
+type SurveyQuestion {
+  id: OID!
+  sectionId: OID!
+  type: QuestionType!
+  title: String!
+  helpText: String
+  required: Boolean!
+  options: [QuestionOption!]!
+  ratingScale: RatingScale
+  columns: [GridColumn!]!
+}
+
+type GridCell {
+  columnId: OID!
+  text: String
+  optionId: OID
+}
+
+type GridRow {
+  cells: [GridCell!]!
+}
+
+type Answer {
+  questionId: OID!
+  text: String
+  optionIds: [OID!]!
+  rating: Int
+  rows: [GridRow!]!
+}
+
+type SurveyResponse {
+  id: OID!
+  submittedAt: DateTime!
+  answers: [Answer!]!
+}
+
+type SurveyState {
+  title: String!
+  description: String
+  kind: SurveyKind!
+  status: SurveyStatus!
+  shareToken: String
+  clientId: PHID
+  clientName: String
+  sections: [SurveySection!]!
+  questions: [SurveyQuestion!]!
+  responses: [SurveyResponse!]!
+  createdAt: DateTime
+  publishedAt: DateTime
+  closedAt: DateTime
+}
+
+# definition
+
+input SetTitleInput {
+  title: String!
+}
+
+input SetDescriptionInput {
+  description: String
+}
+
+input SetSurveyKindInput {
+  kind: SurveyKind!
+}
+
+input SetRecipientInput {
+  clientId: PHID
+  clientName: String
+}
+
+input AddSectionInput {
+  id: OID!
+  title: String!
+  description: String
+}
+
+input UpdateSectionInput {
+  id: OID!
+  title: String
+  description: String
+}
+
+input DeleteSectionInput {
+  id: OID!
+}
+
+input ReorderSectionsInput {
+  order: [OID!]!
+}
+
+input AddQuestionInput {
+  id: OID!
+  sectionId: OID!
+  type: QuestionType!
+  title: String!
+  helpText: String
+  required: Boolean
+  options: [AddQuestionOptionInput!]
+  ratingScale: AddQuestionRatingScaleInput
+  columns: [AddQuestionColumnInput!]
+}
+
+input AddQuestionOptionInput {
+  id: OID!
+  label: String!
+}
+
+input AddQuestionRatingScaleInput {
+  min: Int!
+  max: Int!
+  minLabel: String
+  maxLabel: String
+}
+
+input AddQuestionColumnInput {
+  id: OID!
+  label: String!
+  type: GridColumnType!
+  options: [AddQuestionOptionInput!]
+}
+
+input UpdateQuestionInput {
+  id: OID!
+  type: QuestionType!
+  title: String!
+  helpText: String
+  required: Boolean
+  options: [UpdateQuestionOptionInput!]
+  ratingScale: UpdateQuestionRatingScaleInput
+  columns: [UpdateQuestionColumnInput!]
+}
+
+input UpdateQuestionOptionInput {
+  id: OID!
+  label: String!
+}
+
+input UpdateQuestionRatingScaleInput {
+  min: Int!
+  max: Int!
+  minLabel: String
+  maxLabel: String
+}
+
+input UpdateQuestionColumnInput {
+  id: OID!
+  label: String!
+  type: GridColumnType!
+  options: [UpdateQuestionOptionInput!]
+}
+
+input DeleteQuestionInput {
+  id: OID!
+}
+
+input MoveQuestionInput {
+  id: OID!
+  sectionId: OID!
+}
+
+input ReorderQuestionsInput {
+  order: [OID!]!
+}
+
+# publishing
+
+input PublishSurveyInput {
+  shareToken: String!
+  publishedAt: DateTime!
+}
+
+input CloseSurveyInput {
+  closedAt: DateTime!
+}
+
+input ReopenSurveyInput {
+  _: Boolean
+}
+
+input RegenerateShareTokenInput {
+  shareToken: String!
+}
+
+# responses
+
+input AddResponseInput {
+  id: OID!
+  submittedAt: DateTime!
+  answers: [AddResponseAnswerInput!]!
+}
+
+input AddResponseAnswerInput {
+  questionId: OID!
+  text: String
+  optionIds: [OID!]
+  rating: Int
+  rows: [AddResponseRowInput!]
+}
+
+input AddResponseRowInput {
+  cells: [AddResponseCellInput!]!
+}
+
+input AddResponseCellInput {
+  columnId: OID!
+  text: String
+  optionId: OID
+}
+
+input DeleteResponseInput {
+  id: OID!
+}

@@ -48,8 +48,12 @@
       "name": "Snapshot Report"
     },
     {
-      "name": "OperationalHubProfile",
-      "id": "powerhouse/operational-hub-profile"
+      "id": "powerhouse/operational-hub-profile",
+      "name": "OperationalHubProfile"
+    },
+    {
+      "id": "powerhouse-ops/survey",
+      "name": "Survey"
     }
   ],
   "apps": [],

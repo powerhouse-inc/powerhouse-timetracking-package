@@ -7,6 +7,7 @@ import { LeadFunnel as LeadFunnelV1 } from "document-models/lead-funnel/v1";
 import { OperationalHubProfile as OperationalHubProfileV1 } from "document-models/operational-hub-profile/v1";
 import { ScopeOfWork as ScopeOfWorkV1 } from "document-models/scope-of-work/v1";
 import { SnapshotReport as SnapshotReportV1 } from "document-models/snapshot-report/v1";
+import { Survey as SurveyV1 } from "document-models/survey/v1";
 import { Timesheet as TimesheetV1 } from "document-models/timesheet/v1";
 import { TimetrackingWorkspace as TimetrackingWorkspaceV1 } from "document-models/timetracking-workspace/v1";
 
@@ -25,6 +26,7 @@ export const documentModels = [
   OperationalHubProfileV1,
   ScopeOfWorkV1,
   SnapshotReportV1,
+  SurveyV1,
   TimesheetV1,
   TimetrackingWorkspaceV1,
 ] as const;

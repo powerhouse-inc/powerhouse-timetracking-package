@@ -7,5 +7,6 @@ export { LeadFunnel as LeadFunnelV1 } from "./lead-funnel/v1/module.js";
 export { OperationalHubProfile as OperationalHubProfileV1 } from "./operational-hub-profile/v1/module.js";
 export { ScopeOfWork as ScopeOfWorkV1 } from "./scope-of-work/v1/module.js";
 export { SnapshotReport as SnapshotReportV1 } from "./snapshot-report/v1/module.js";
+export { Survey as SurveyV1 } from "./survey/v1/module.js";
 export { Timesheet as TimesheetV1 } from "./timesheet/v1/module.js";
 export { TimetrackingWorkspace as TimetrackingWorkspaceV1 } from "./timetracking-workspace/v1/module.js";

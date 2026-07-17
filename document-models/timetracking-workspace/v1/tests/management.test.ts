@@ -11,7 +11,20 @@ import {
   updateClient,
   updateMember,
   updateProject,
-  utils, isTimetrackingWorkspaceDocument, SetWorkspaceNameInputSchema, AddMemberInputSchema, UpdateMemberInputSchema, SetMemberRoleInputSchema, ArchiveMemberInputSchema, AddClientInputSchema, UpdateClientInputSchema, ArchiveClientInputSchema, AddProjectInputSchema, UpdateProjectInputSchema, ArchiveProjectInputSchema } from "document-models/timetracking-workspace/v1";
+  utils,
+  isTimetrackingWorkspaceDocument,
+  SetWorkspaceNameInputSchema,
+  AddMemberInputSchema,
+  UpdateMemberInputSchema,
+  SetMemberRoleInputSchema,
+  ArchiveMemberInputSchema,
+  AddClientInputSchema,
+  UpdateClientInputSchema,
+  ArchiveClientInputSchema,
+  AddProjectInputSchema,
+  UpdateProjectInputSchema,
+  ArchiveProjectInputSchema,
+} from "document-models/timetracking-workspace/v1";
 import { describe, expect, it } from "vitest";
 
 const lastError = (doc: ReturnType<typeof utils.createDocument>) => {
