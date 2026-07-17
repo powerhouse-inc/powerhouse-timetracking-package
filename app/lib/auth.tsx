@@ -11,6 +11,7 @@ import {
 } from "react";
 import { RENOWN_URL } from "./config";
 import { addressFromDid, getAppDid } from "./renown";
+import { useWorkspace } from "./hooks";
 
 export interface Identity {
   address: string;
@@ -37,8 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Renown returns the signed-in DID as ?user=<did>; capture it.
     const params = new URLSearchParams(window.location.search);
-    const did = params.get("user");
-    if (did) {
+    const rawUser = params.get("user");
+    if (rawUser) {
+      // Renown double-encodes the user param (encodeURIComponent + then
+      // URLSearchParams), so after URLSearchParams decodes once it's still
+      // percent-encoded (did%3A…). Decode again to get did:pkh:eip155:1:0x…,
+      // whose final segment is the signer's Ethereum address.
+      const did = safeDecode(rawUser);
       const identity: Identity = {
         address: addressFromDid(did),
         name: shortDid(did),
@@ -94,16 +100,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
+  const { data: workspace } = useWorkspace();
+
+  // The DID only carries the eth address; the human name lives on the workspace
+  // member. Resolve it by matching addresses so the UI shows "Frank Pfeift"
+  // rather than the short 0x…address (and never the raw DID).
+  const resolvedUser = useMemo<Identity | null>(() => {
+    if (!user) return null;
+    const addr = user.address.toLowerCase();
+    const member = workspace?.members?.find(
+      (m) => m.address?.toLowerCase() === addr,
+    );
+    return member?.name && member.name !== user.name
+      ? { ...user, name: member.name }
+      : user;
+  }, [user, workspace]);
+
   const value = useMemo<AuthValue>(
     () => ({
-      user,
+      user: resolvedUser,
       ready,
       signIn,
       signOut,
       startRenown,
       renownConfigured: Boolean(RENOWN_URL),
     }),
-    [user, ready, signIn, signOut, startRenown],
+    [resolvedUser, ready, signIn, signOut, startRenown],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -118,4 +140,12 @@ export function useAuth(): AuthValue {
 function shortDid(did: string): string {
   const tail = did.split(":").pop() ?? did;
   return tail.length > 10 ? `${tail.slice(0, 6)}…${tail.slice(-4)}` : tail;
+}
+
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
 }
