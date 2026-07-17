@@ -235,17 +235,23 @@ export function Overview() {
 }
 
 // Reflects the modules actually shipped so the copy isn't misleading when the
-// app is trimmed to a single channel.
+// app is trimmed. "Everything at a glance" only fits a multi-area build; a
+// single channel gets a focused line instead of the contradictory "everything
+// — sales".
 function dashboardSubtitle(): string {
-  const parts = [
+  const areas = [
     isModuleEnabled("sales") && "sales",
     isModuleEnabled("delivery") && "delivery",
     (isModuleEnabled("invoices") || isModuleEnabled("statements")) && "billing",
     (isModuleEnabled("reports") || isModuleEnabled("calendar")) && "time",
-  ].filter(Boolean);
-  return parts.length > 0
-    ? `Everything at a glance — ${parts.join(", ")}.`
-    : "Everything at a glance.";
+  ].filter(Boolean) as string[];
+
+  if (areas.length >= 2) {
+    return `Everything at a glance — ${areas.join(", ")}.`;
+  }
+  if (areas[0] === "sales") return "Your sales pipeline at a glance.";
+  if (areas.length === 1) return `Your ${areas[0]} at a glance.`;
+  return "Your workspace at a glance.";
 }
 
 function Stat({
