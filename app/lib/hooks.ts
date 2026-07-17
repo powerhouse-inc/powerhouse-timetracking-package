@@ -10,6 +10,7 @@ import {
   fetchLeadFunnel,
   fetchScopesOfWork,
   fetchSnapshotReports,
+  fetchSurveys,
   fetchTimesheets,
   fetchWorkspace,
   type LeadFunnelDoc,
@@ -25,6 +26,7 @@ import type {
   Role,
   ScopeOfWorkDoc,
   SnapshotReportDoc,
+  SurveyDoc,
 } from "./types";
 
 export function useWorkspace() {
@@ -127,6 +129,14 @@ export function useSnapshotReports() {
   });
 }
 
+export function useSurveys() {
+  return useQuery<SurveyDoc[]>({
+    queryKey: ["surveys"],
+    queryFn: fetchSurveys,
+    refetchInterval: 4000,
+  });
+}
+
 /** Invalidate the read queries after a mutation so the UI reflects changes fast. */
 export function useRefresh() {
   const qc = useQueryClient();
@@ -137,6 +147,7 @@ export function useRefresh() {
     void qc.invalidateQueries({ queryKey: ["scopesOfWork"] });
     void qc.invalidateQueries({ queryKey: ["invoices"] });
     void qc.invalidateQueries({ queryKey: ["billingStatements"] });
+    void qc.invalidateQueries({ queryKey: ["surveys"] });
   };
 }
 

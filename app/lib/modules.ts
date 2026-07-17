@@ -27,7 +27,8 @@ export type ModuleKey =
   | "finance"
   | "projects"
   | "clients"
-  | "members";
+  | "members"
+  | "surveys";
 
 const DEFAULT_ENABLED = "dashboard,sales,clients,members";
 
@@ -66,6 +67,7 @@ export const ROUTE_MODULE: Record<string, ModuleKey> = {
   "/projects": "projects",
   "/clients": "clients",
   "/members": "members",
+  "/surveys": "surveys",
 };
 
 // Where to send users landing on a disabled route (first enabled by priority).

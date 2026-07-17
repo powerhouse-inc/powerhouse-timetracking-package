@@ -348,3 +348,95 @@ export interface SnapshotReportDoc {
   /** Sum of OUTFLOW transaction amounts across all snapshot accounts. */
   netOutflow: number;
 }
+
+/* -------------------------------- surveys -------------------------------- */
+
+export type SurveyKind = "SURVEY" | "TEMPLATE";
+export type SurveyStatus = "DRAFT" | "OPEN" | "CLOSED";
+export type QuestionType =
+  | "SHORT_TEXT"
+  | "LONG_TEXT"
+  | "SINGLE_SELECT"
+  | "MULTI_SELECT"
+  | "RATING"
+  | "GRID";
+export type GridColumnType = "TEXT" | "SELECT";
+
+export interface QuestionOption {
+  id: string;
+  label: string;
+}
+
+export interface RatingScale {
+  min: number;
+  max: number;
+  minLabel: string | null;
+  maxLabel: string | null;
+}
+
+export interface GridColumn {
+  id: string;
+  label: string;
+  type: GridColumnType;
+  options: QuestionOption[];
+}
+
+export interface SurveySection {
+  id: string;
+  title: string;
+  description: string | null;
+}
+
+export interface SurveyQuestion {
+  id: string;
+  sectionId: string;
+  type: QuestionType;
+  title: string;
+  helpText: string | null;
+  required: boolean;
+  options: QuestionOption[];
+  ratingScale: RatingScale | null;
+  columns: GridColumn[];
+}
+
+export interface GridCell {
+  columnId: string;
+  text: string | null;
+  optionId: string | null;
+}
+
+export interface GridRow {
+  cells: GridCell[];
+}
+
+export interface SurveyAnswer {
+  questionId: string;
+  text: string | null;
+  optionIds: string[];
+  rating: number | null;
+  rows: GridRow[];
+}
+
+export interface SurveyResponse {
+  id: string;
+  submittedAt: string;
+  answers: SurveyAnswer[];
+}
+
+export interface SurveyDoc {
+  id: string;
+  name: string;
+  title: string;
+  description: string | null;
+  kind: SurveyKind;
+  status: SurveyStatus;
+  shareToken: string | null;
+  clientId: string | null;
+  clientName: string | null;
+  sections: SurveySection[];
+  questions: SurveyQuestion[];
+  responses: SurveyResponse[];
+  createdAt: string | null;
+  publishedAt: string | null;
+  closedAt: string | null;
+}

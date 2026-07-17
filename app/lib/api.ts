@@ -25,6 +25,10 @@ import type {
   SowDeliverable,
   SowProject,
   SowStatus,
+  SurveyDoc,
+  SurveyKind,
+  SurveyQuestion,
+  SurveySection,
   TransactionDirection,
   WorkspaceClient,
   WorkspaceMember,
@@ -1397,3 +1401,258 @@ export async function fetchSnapshotReports(): Promise<SnapshotReportDoc[]> {
     };
   });
 }
+
+/* -------------------------------- surveys -------------------------------- */
+
+const SURVEYS_QUERY = `
+  query {
+    Survey {
+      documents {
+        items {
+          id
+          name
+          state {
+            global {
+              title
+              description
+              kind
+              status
+              shareToken
+              clientId
+              clientName
+              sections { id title description }
+              questions {
+                id sectionId type title helpText required
+                options { id label }
+                ratingScale { min max minLabel maxLabel }
+                columns { id label type options { id label } }
+              }
+              responses {
+                id submittedAt
+                answers {
+                  questionId text optionIds rating
+                  rows { cells { columnId text optionId } }
+                }
+              }
+              createdAt
+              publishedAt
+              closedAt
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+interface SurveyItem {
+  id: string;
+  name: string;
+  state: { global: Omit<SurveyDoc, "id" | "name"> };
+}
+
+export async function fetchSurveys(): Promise<SurveyDoc[]> {
+  const data = await gql<{ Survey: { documents: { items: SurveyItem[] } } }>(
+    SURVEYS_QUERY,
+  );
+  return data.Survey.documents.items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    ...item.state.global,
+  }));
+}
+
+/** 128-bit unguessable token for the public share link. */
+function randomToken(): string {
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** The opaque link handed to a respondent: `<docId>~<shareToken>`. */
+export function surveyShareLink(origin: string, survey: SurveyDoc): string | null {
+  if (!survey.shareToken) return null;
+  return `${origin}/s/${survey.id}~${survey.shareToken}`;
+}
+
+async function createSurveyDocument(name: string): Promise<string> {
+  const data = await gql<{ Survey: { createDocument: { id: string } } }>(
+    `mutation($name: String!, $parent: String) {
+      Survey { createDocument(name: $name, parentIdentifier: $parent) { id } }
+    }`,
+    { name, parent: DRIVE_ID },
+  );
+  return data.Survey.createDocument.id;
+}
+
+export async function createSurvey(
+  title: string,
+  kind: SurveyKind = "SURVEY",
+): Promise<string> {
+  const id = await createSurveyDocument(title || "Untitled survey");
+  await surveyApi.setTitle(id, title);
+  if (kind === "TEMPLATE") await surveyApi.setKind(id, "TEMPLATE");
+  return id;
+}
+
+export interface FromTemplateInput {
+  title: string;
+  clientId: string | null;
+  clientName: string | null;
+}
+
+/**
+ * Instantiate a live survey from a template: copy the whole definition into a
+ * fresh SURVEY document (reusing the template's section/question/option ids,
+ * which are safe to reuse in a new document).
+ */
+export async function createSurveyFromTemplate(
+  template: SurveyDoc,
+  input: FromTemplateInput,
+): Promise<string> {
+  const id = await createSurveyDocument(input.title || "Untitled survey");
+  await surveyApi.setTitle(id, input.title);
+  if (template.description) await surveyApi.setDescription(id, template.description);
+  if (input.clientId || input.clientName)
+    await surveyApi.setRecipient(id, input.clientId, input.clientName);
+  for (const section of template.sections) {
+    await surveyApi.addSection(id, {
+      id: section.id,
+      title: section.title,
+      description: section.description,
+    });
+  }
+  for (const q of template.questions) {
+    await surveyApi.addQuestion(id, {
+      id: q.id,
+      sectionId: q.sectionId,
+      type: q.type,
+      title: q.title,
+      helpText: q.helpText,
+      required: q.required,
+      options: q.options,
+      ratingScale: q.ratingScale,
+      columns: q.columns,
+    });
+  }
+  return id;
+}
+
+export interface NewSectionInput {
+  id?: string;
+  title: string;
+  description: string | null;
+}
+
+export interface QuestionInput {
+  id?: string;
+  sectionId: string;
+  type: SurveyQuestion["type"];
+  title: string;
+  helpText: string | null;
+  required: boolean;
+  options: SurveyQuestion["options"];
+  ratingScale: SurveyQuestion["ratingScale"];
+  columns: SurveyQuestion["columns"];
+}
+
+export const surveyApi = {
+  setTitle: (docId: string, title: string) =>
+    mutate("Survey", "setTitle", "docId: $docId, input: $input", {
+      docId,
+      input: { title },
+    }),
+  setDescription: (docId: string, description: string | null) =>
+    mutate("Survey", "setDescription", "docId: $docId, input: $input", {
+      docId,
+      input: { description },
+    }),
+  setKind: (docId: string, kind: SurveyKind) =>
+    mutate("Survey", "setSurveyKind", "docId: $docId, input: $input", {
+      docId,
+      input: { kind },
+    }),
+  setRecipient: (docId: string, clientId: string | null, clientName: string | null) =>
+    mutate("Survey", "setRecipient", "docId: $docId, input: $input", {
+      docId,
+      input: { clientId, clientName },
+    }),
+  addSection: (docId: string, input: NewSectionInput) =>
+    mutate("Survey", "addSection", "docId: $docId, input: $input", {
+      docId,
+      input: { id: input.id ?? randomId(), title: input.title, description: input.description },
+    }),
+  updateSection: (
+    docId: string,
+    id: string,
+    patch: { title?: string; description?: string | null },
+  ) =>
+    mutate("Survey", "updateSection", "docId: $docId, input: $input", {
+      docId,
+      input: { id, ...patch },
+    }),
+  deleteSection: (docId: string, id: string) =>
+    mutate("Survey", "deleteSection", "docId: $docId, input: $input", {
+      docId,
+      input: { id },
+    }),
+  reorderSections: (docId: string, order: string[]) =>
+    mutate("Survey", "reorderSections", "docId: $docId, input: $input", {
+      docId,
+      input: { order },
+    }),
+  addQuestion: (docId: string, input: QuestionInput) =>
+    mutate("Survey", "addQuestion", "docId: $docId, input: $input", {
+      docId,
+      input: { ...input, id: input.id ?? randomId() },
+    }),
+  updateQuestion: (
+    docId: string,
+    id: string,
+    config: Omit<QuestionInput, "id" | "sectionId">,
+  ) =>
+    mutate("Survey", "updateQuestion", "docId: $docId, input: $input", {
+      docId,
+      input: { id, ...config },
+    }),
+  deleteQuestion: (docId: string, id: string) =>
+    mutate("Survey", "deleteQuestion", "docId: $docId, input: $input", {
+      docId,
+      input: { id },
+    }),
+  moveQuestion: (docId: string, id: string, sectionId: string) =>
+    mutate("Survey", "moveQuestion", "docId: $docId, input: $input", {
+      docId,
+      input: { id, sectionId },
+    }),
+  reorderQuestions: (docId: string, order: string[]) =>
+    mutate("Survey", "reorderQuestions", "docId: $docId, input: $input", {
+      docId,
+      input: { order },
+    }),
+  publish: (docId: string) =>
+    mutate("Survey", "publishSurvey", "docId: $docId, input: $input", {
+      docId,
+      input: { shareToken: randomToken(), publishedAt: new Date().toISOString() },
+    }),
+  close: (docId: string) =>
+    mutate("Survey", "closeSurvey", "docId: $docId, input: $input", {
+      docId,
+      input: { closedAt: new Date().toISOString() },
+    }),
+  reopen: (docId: string) =>
+    mutate("Survey", "reopenSurvey", "docId: $docId, input: $input", {
+      docId,
+      input: { _: true },
+    }),
+  regenerateToken: (docId: string) =>
+    mutate("Survey", "regenerateShareToken", "docId: $docId, input: $input", {
+      docId,
+      input: { shareToken: randomToken() },
+    }),
+  deleteResponse: (docId: string, id: string) =>
+    mutate("Survey", "deleteResponse", "docId: $docId, input: $input", {
+      docId,
+      input: { id },
+    }),
+};

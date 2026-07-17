@@ -61,6 +61,12 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
     ],
   },
   {
+    heading: "Engage",
+    items: [
+      { href: "/surveys", label: "Surveys", icon: "❓", module: "surveys", managerial: true },
+    ],
+  },
+  {
     heading: "Manage",
     items: [
       { href: "/projects", label: "Projects", icon: "▦", module: "projects", managerial: true },
@@ -116,7 +122,11 @@ export function Sidebar({
                 {group.heading}
               </div>
               {items.map((item) => {
-                const active = pathname === item.href;
+                const active =
+                  item.href === "/"
+                    ? pathname === "/"
+                    : pathname === item.href ||
+                      pathname.startsWith(`${item.href}/`);
                 return (
                   <Link
                     key={item.href}
