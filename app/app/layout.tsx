@@ -25,6 +25,7 @@ function runtimeEnv() {
     NEXT_PUBLIC_SWITCHBOARD_URL: process.env.NEXT_PUBLIC_SWITCHBOARD_URL ?? "",
     NEXT_PUBLIC_DRIVE_ID: process.env.NEXT_PUBLIC_DRIVE_ID ?? "",
     NEXT_PUBLIC_RENOWN_URL: process.env.NEXT_PUBLIC_RENOWN_URL ?? "",
+    NEXT_PUBLIC_MODULES: process.env.NEXT_PUBLIC_MODULES ?? "",
   };
 }
 

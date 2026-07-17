@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-function conf(
+export function conf(
   runtimeKey: string,
   buildTime: string | undefined,
   fallback: string,

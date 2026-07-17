@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useMyRole } from "@/lib/hooks";
+import { isModuleEnabled, type ModuleKey } from "@/lib/modules";
 import type { Role } from "@/lib/types";
 import { Avatar } from "./ui";
 
@@ -11,6 +12,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: string;
+  module: ModuleKey;
   managerial?: boolean;
 }
 
@@ -18,49 +20,52 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
   {
     heading: "Overview",
     items: [
-      { href: "/", label: "Dashboard", icon: "◆" },
-      { href: "/my-work", label: "My Work", icon: "✦" },
+      { href: "/", label: "Dashboard", icon: "◆", module: "dashboard" },
+      { href: "/my-work", label: "My Work", icon: "✦", module: "myWork" },
     ],
   },
   { heading: "Track", items: [
-    { href: "/calendar", label: "Calendar", icon: "▦" },
-    { href: "/timer", label: "Timer", icon: "⏱" },
+    { href: "/calendar", label: "Calendar", icon: "▦", module: "calendar" },
+    { href: "/timer", label: "Timer", icon: "⏱", module: "timer" },
   ] },
   {
     heading: "Analyze",
     items: [
-      { href: "/reports", label: "Reports", icon: "▿" },
+      { href: "/reports", label: "Reports", icon: "▿", module: "reports" },
       {
         href: "/profitability",
         label: "Profitability",
         icon: "◑",
+        module: "profitability",
         managerial: true,
       },
     ],
   },
   {
     heading: "Sales",
-    items: [{ href: "/sales", label: "Pipeline", icon: "◈" }],
+    items: [{ href: "/sales", label: "Pipeline", icon: "◈", module: "sales" }],
   },
   {
     heading: "Delivery",
-    items: [{ href: "/delivery", label: "Scopes of Work", icon: "◫" }],
+    items: [
+      { href: "/delivery", label: "Scopes of Work", icon: "◫", module: "delivery" },
+    ],
   },
   {
     heading: "Billing",
     items: [
-      { href: "/submit-invoice", label: "Submit Invoice", icon: "✎" },
-      { href: "/invoices", label: "Invoices", icon: "▤", managerial: true },
-      { href: "/statements", label: "Statements", icon: "▥", managerial: true },
-      { href: "/finance", label: "Finance", icon: "◭", managerial: true },
+      { href: "/submit-invoice", label: "Submit Invoice", icon: "✎", module: "submitInvoice" },
+      { href: "/invoices", label: "Invoices", icon: "▤", module: "invoices", managerial: true },
+      { href: "/statements", label: "Statements", icon: "▥", module: "statements", managerial: true },
+      { href: "/finance", label: "Finance", icon: "◭", module: "finance", managerial: true },
     ],
   },
   {
     heading: "Manage",
     items: [
-      { href: "/projects", label: "Projects", icon: "▦", managerial: true },
-      { href: "/clients", label: "Clients", icon: "◍", managerial: true },
-      { href: "/members", label: "Members", icon: "⦿", managerial: true },
+      { href: "/projects", label: "Projects", icon: "▦", module: "projects", managerial: true },
+      { href: "/clients", label: "Clients", icon: "◍", module: "clients", managerial: true },
+      { href: "/members", label: "Members", icon: "⦿", module: "members", managerial: true },
     ],
   },
 ];
@@ -101,7 +106,9 @@ export function Sidebar({
 
       <nav className="flex-1 px-3">
         {GROUPS.map((group) => {
-          const items = group.items.filter((i) => !i.managerial || canManage);
+          const items = group.items.filter(
+            (i) => isModuleEnabled(i.module) && (!i.managerial || canManage),
+          );
           if (items.length === 0) return null;
           return (
             <div key={group.heading} className="mb-5">

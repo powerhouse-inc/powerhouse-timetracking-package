@@ -13,6 +13,7 @@ import {
   useWorkspace,
 } from "@/lib/hooks";
 import { PageHeader } from "@/components/ui";
+import { isModuleEnabled } from "@/lib/modules";
 import type { InvoiceStatus } from "@/lib/types";
 
 const OPEN_INVOICE: InvoiceStatus[] = [
@@ -108,105 +109,143 @@ export function Overview() {
     <>
       <PageHeader
         title={`Operations${workspace?.name ? ` · ${workspace.name}` : ""}`}
-        subtitle="Everything at a glance — sales, delivery, billing and time."
+        subtitle={dashboardSubtitle()}
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat
-          label="Open pipeline"
-          value={formatAmount(stats.openPipeline)}
-          sub={plural(stats.leadCount, "lead")}
-          href="/sales"
-          accent="#e57cd8"
-        />
-        <Stat
-          label="Won (deal value)"
-          value={formatAmount(stats.wonValue)}
-          sub="closed-won"
-          href="/sales"
-          accent="#22c55e"
-        />
-        <Stat
-          label="Outstanding invoices"
-          value={formatAmount(stats.outstanding)}
-          sub={
-            stats.overdue.length > 0
-              ? `${stats.overdue.length} overdue`
-              : `${stats.invoiceCount} total`
-          }
-          href="/invoices"
-          accent={stats.overdue.length > 0 ? "#ef4444" : "#3b82f6"}
-        />
-        <Stat
-          label="Collected"
-          value={formatAmount(stats.paid)}
-          sub="paid invoices"
-          href="/invoices"
-          accent="#22c55e"
-        />
-        <Stat
-          label="Tracked (7 days)"
-          value={`${stats.hours7.toFixed(1)}h`}
-          sub={`${stats.members} active members`}
-          href="/reports"
-          accent="#a855f7"
-        />
-        <Stat
-          label="Active deliverables"
-          value={`${stats.activeDeliverables}`}
-          sub={`${stats.deliverableCount} total`}
-          href="/delivery"
-          accent="#06b6d4"
-        />
-        <Stat
-          label="Billing statements"
-          value={`${stats.statementCount}`}
-          sub="contributor charges"
-          href="/statements"
-          accent="#eab308"
-        />
-        <Stat
-          label="Clients"
-          value={`${(workspace?.clients ?? []).filter((c) => c.status === "ACTIVE").length}`}
-          sub={`${(workspace?.projects ?? []).filter((p) => p.status === "ACTIVE").length} projects`}
-          href="/projects"
-          accent="#6366f1"
-        />
+        {isModuleEnabled("sales") && (
+          <>
+            <Stat
+              label="Open pipeline"
+              value={formatAmount(stats.openPipeline)}
+              sub={plural(stats.leadCount, "lead")}
+              href="/sales"
+              accent="#e57cd8"
+            />
+            <Stat
+              label="Won (deal value)"
+              value={formatAmount(stats.wonValue)}
+              sub="closed-won"
+              href="/sales"
+              accent="#22c55e"
+            />
+          </>
+        )}
+        {isModuleEnabled("invoices") && (
+          <>
+            <Stat
+              label="Outstanding invoices"
+              value={formatAmount(stats.outstanding)}
+              sub={
+                stats.overdue.length > 0
+                  ? `${stats.overdue.length} overdue`
+                  : `${stats.invoiceCount} total`
+              }
+              href="/invoices"
+              accent={stats.overdue.length > 0 ? "#ef4444" : "#3b82f6"}
+            />
+            <Stat
+              label="Collected"
+              value={formatAmount(stats.paid)}
+              sub="paid invoices"
+              href="/invoices"
+              accent="#22c55e"
+            />
+          </>
+        )}
+        {isModuleEnabled("reports") && (
+          <Stat
+            label="Tracked (7 days)"
+            value={`${stats.hours7.toFixed(1)}h`}
+            sub={`${stats.members} active members`}
+            href="/reports"
+            accent="#a855f7"
+          />
+        )}
+        {isModuleEnabled("delivery") && (
+          <Stat
+            label="Active deliverables"
+            value={`${stats.activeDeliverables}`}
+            sub={`${stats.deliverableCount} total`}
+            href="/delivery"
+            accent="#06b6d4"
+          />
+        )}
+        {isModuleEnabled("statements") && (
+          <Stat
+            label="Billing statements"
+            value={`${stats.statementCount}`}
+            sub="contributor charges"
+            href="/statements"
+            accent="#eab308"
+          />
+        )}
+        {isModuleEnabled("clients") && (
+          <Stat
+            label="Clients"
+            value={`${(workspace?.clients ?? []).filter((c) => c.status === "ACTIVE").length}`}
+            sub={
+              isModuleEnabled("projects")
+                ? `${(workspace?.projects ?? []).filter((p) => p.status === "ACTIVE").length} projects`
+                : "active"
+            }
+            href="/clients"
+            accent="#6366f1"
+          />
+        )}
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
-        <Panel title="Top open deals" href="/sales">
-          {topLeads.length === 0 ? (
-            <Empty>No open leads.</Empty>
-          ) : (
-            topLeads.map((l) => (
-              <Row
-                key={l.id}
-                left={l.name}
-                sub={l.company ?? l.stage}
-                right={formatAmount(l.estimatedValue ?? 0)}
-              />
-            ))
-          )}
-        </Panel>
-        <Panel title="Needs attention · overdue invoices" href="/invoices">
-          {stats.overdue.length === 0 ? (
-            <Empty>No overdue invoices. 🎉</Empty>
-          ) : (
-            stats.overdue.slice(0, 5).map((i) => (
-              <Row
-                key={i.id}
-                left={i.invoiceNo || "—"}
-                sub={`${i.payerName ?? ""} · due ${fmtDate(i.dateDue)}`}
-                right={formatAmount(i.totalPriceTaxIncl, i.currency)}
-                danger
-              />
-            ))
-          )}
-        </Panel>
+        {isModuleEnabled("sales") && (
+          <Panel title="Top open deals" href="/sales">
+            {topLeads.length === 0 ? (
+              <Empty>No open leads.</Empty>
+            ) : (
+              topLeads.map((l) => (
+                <Row
+                  key={l.id}
+                  left={l.name}
+                  sub={l.company ?? l.stage}
+                  right={formatAmount(l.estimatedValue ?? 0)}
+                />
+              ))
+            )}
+          </Panel>
+        )}
+        {isModuleEnabled("invoices") && (
+          <Panel title="Needs attention · overdue invoices" href="/invoices">
+            {stats.overdue.length === 0 ? (
+              <Empty>No overdue invoices. 🎉</Empty>
+            ) : (
+              stats.overdue.slice(0, 5).map((i) => (
+                <Row
+                  key={i.id}
+                  left={i.invoiceNo || "—"}
+                  sub={`${i.payerName ?? ""} · due ${fmtDate(i.dateDue)}`}
+                  right={formatAmount(i.totalPriceTaxIncl, i.currency)}
+                  danger
+                />
+              ))
+            )}
+          </Panel>
+        )}
       </div>
     </>
   );
+}
+
+// Reflects the modules actually shipped so the copy isn't misleading when the
+// app is trimmed to a single channel.
+function dashboardSubtitle(): string {
+  const parts = [
+    isModuleEnabled("sales") && "sales",
+    isModuleEnabled("delivery") && "delivery",
+    (isModuleEnabled("invoices") || isModuleEnabled("statements")) && "billing",
+    (isModuleEnabled("reports") || isModuleEnabled("calendar")) && "time",
+  ].filter(Boolean);
+  return parts.length > 0
+    ? `Everything at a glance — ${parts.join(", ")}.`
+    : "Everything at a glance.";
 }
 
 function Stat({

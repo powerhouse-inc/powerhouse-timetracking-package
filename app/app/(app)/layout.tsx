@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { LoginScreen } from "@/components/login-screen";
 import { Sidebar } from "@/components/sidebar";
 import { useAuth } from "@/lib/auth";
+import { ROUTE_MODULE, isModuleEnabled, landingRoute } from "@/lib/modules";
 
 // Horizontal "canvas" views use the full screen width on ultrawide monitors;
 // everything else keeps a readable cap so text and dashboards don't stretch.
@@ -14,9 +15,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, ready } = useAuth();
   const [navOpen, setNavOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const fullBleed = FULL_BLEED.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
+
+  // Guard direct-URL access to a disabled module: bounce to the landing route.
+  const routeModule = ROUTE_MODULE[pathname];
+  const blocked = routeModule !== undefined && !isModuleEnabled(routeModule);
+  useEffect(() => {
+    if (user && blocked) router.replace(landingRoute());
+  }, [user, blocked, router]);
 
   if (!ready) {
     return (
@@ -70,7 +79,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               fullBleed ? "" : "max-w-[112rem]"
             }`}
           >
-            {children}
+            {blocked ? null : children}
           </div>
         </main>
       </div>
