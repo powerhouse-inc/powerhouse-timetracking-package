@@ -120,7 +120,15 @@ interface WorkspaceItem {
   state: {
     global: {
       name: string;
-      members: WorkspaceMember[];
+      members: {
+        id: string;
+        address: string | null;
+        did: string | null;
+        name: string;
+        avatarUrl: string | null;
+        role: WorkspaceMember["role"];
+        status: WorkspaceMember["status"];
+      }[];
       clients: { id: string; name: string; status: WorkspaceClient["status"] }[];
       projects: {
         id: string;
@@ -160,7 +168,18 @@ export async function fetchWorkspace(): Promise<WorkspaceDoc | null> {
   return {
     id: item.id,
     name: g.name,
-    members: g.members,
+    // Remap the member's document `id` to `localId` (as clients/projects do) —
+    // the Members UI and mutations key off `localId`, so passing the raw shape
+    // through left it undefined and every role/archive change silently failed.
+    members: g.members.map((m) => ({
+      localId: m.id,
+      address: m.address,
+      did: m.did,
+      name: m.name,
+      avatarUrl: m.avatarUrl,
+      role: m.role,
+      status: m.status,
+    })),
     clients: g.clients.map((c) => ({
       localId: c.id,
       name: c.name,
