@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 /**
  * Server-side proxy to the reactor's Switchboard.
@@ -16,6 +18,20 @@ const TARGET =
   "http://localhost:4001/graphql";
 
 export async function POST(req: NextRequest) {
+  // Gate the reactor: only authenticated members may reach it. Without this the
+  // proxy would be an anonymous, internet-facing read/write door to every
+  // document, defeating the point of keeping the Switchboard internal-only.
+  const session = await verifySessionToken(
+    process.env.SESSION_SECRET ?? "",
+    req.cookies.get(SESSION_COOKIE)?.value,
+  );
+  if (!session) {
+    return new Response(
+      JSON.stringify({ errors: [{ message: "Not authenticated." }] }),
+      { status: 401, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
   const body = await req.text();
   try {
     const res = await fetch(TARGET, {

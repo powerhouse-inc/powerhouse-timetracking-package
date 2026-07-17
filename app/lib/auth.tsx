@@ -10,8 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { RENOWN_URL } from "./config";
-import { addressFromDid, getAppDid } from "./renown";
-import { useWorkspace } from "./hooks";
+import { getAppDid } from "./renown";
 
 export interface Identity {
   address: string;
@@ -22,36 +21,36 @@ export interface Identity {
 interface AuthValue {
   user: Identity | null;
   ready: boolean;
-  signIn: (identity: Identity) => void;
+  /** Non-null when a sign-in was rejected (e.g. not a workspace member). */
+  error: string | null;
   signOut: () => void;
   startRenown: () => void;
   renownConfigured: boolean;
 }
 
-const STORAGE_KEY = "tt-identity";
 const AuthContext = createContext<AuthValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Identity | null>(null);
   const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Renown returns the signed-in DID as ?user=<did>; capture it.
+    let cancelled = false;
+
+    // Renown returns the signed-in DID as ?user=<did>. We hand it to the server,
+    // which independently verifies active membership before issuing the session
+    // cookie — the client can't grant itself access.
     const params = new URLSearchParams(window.location.search);
     const rawUser = params.get("user");
-    if (rawUser) {
-      // Renown double-encodes the user param (encodeURIComponent + then
-      // URLSearchParams), so after URLSearchParams decodes once it's still
-      // percent-encoded (did%3A…). Decode again to get did:pkh:eip155:1:0x…,
-      // whose final segment is the signer's Ethereum address.
-      const did = safeDecode(rawUser);
-      const identity: Identity = {
-        address: addressFromDid(did),
-        name: shortDid(did),
-        did,
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
-      setUser(identity);
+
+    async function establish(did: string) {
+      const res = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ did }),
+      });
+      // Strip ?user from the URL regardless of outcome.
       params.delete("user");
       const qs = params.toString();
       window.history.replaceState(
@@ -59,28 +58,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         "",
         window.location.pathname + (qs ? `?${qs}` : ""),
       );
-      setReady(true);
-      return;
-    }
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        setUser(JSON.parse(raw) as Identity);
-      } catch {
-        /* ignore */
+      if (res.ok) {
+        // Full navigation so the server auth gate re-runs with the new cookie.
+        window.location.replace("/");
+        return;
+      }
+      const body = (await res.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      if (!cancelled) {
+        setError(body?.error ?? "Sign-in failed.");
+        setReady(true);
       }
     }
-    setReady(true);
-  }, []);
 
-  const signIn = useCallback((identity: Identity) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
-    setUser(identity);
+    async function loadMe() {
+      const res = await fetch("/api/auth/me", { cache: "no-store" });
+      const body = (await res.json().catch(() => null)) as {
+        user?: { address: string; name: string } | null;
+      } | null;
+      if (cancelled) return;
+      setUser(
+        body?.user
+          ? { address: body.user.address, name: body.user.name, did: null }
+          : null,
+      );
+      setReady(true);
+    }
+
+    if (rawUser) {
+      // Renown double-encodes the param, so decode once more.
+      let did = rawUser;
+      try {
+        did = decodeURIComponent(rawUser);
+      } catch {
+        /* keep raw */
+      }
+      void establish(did);
+    } else {
+      void loadMe();
+    }
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const signOut = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
-    setUser(null);
+    void fetch("/api/auth/session", { method: "DELETE" }).finally(() => {
+      setUser(null);
+      window.location.replace("/login");
+    });
   }, []);
 
   const startRenown = useCallback(() => {
@@ -100,34 +128,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const { data: workspace } = useWorkspace();
-
-  // The DID only carries the eth address; the human name lives on the workspace
-  // member. Resolve it by matching addresses so the UI shows "Frank Pfeift"
-  // rather than the short 0x…address (and never the raw DID).
-  const resolvedUser = useMemo<Identity | null>(() => {
-    if (!user) return null;
-    const addr = user.address.toLowerCase();
-    // Match an ACTIVE member — an archived one must not keep claiming the
-    // identity (that's what let a stale/duplicate member win by list order).
-    const member = workspace?.members?.find(
-      (m) => m.status !== "ARCHIVED" && m.address?.toLowerCase() === addr,
-    );
-    return member?.name && member.name !== user.name
-      ? { ...user, name: member.name }
-      : user;
-  }, [user, workspace]);
-
   const value = useMemo<AuthValue>(
     () => ({
-      user: resolvedUser,
+      user,
       ready,
-      signIn,
+      error,
       signOut,
       startRenown,
       renownConfigured: Boolean(RENOWN_URL),
     }),
-    [resolvedUser, ready, signIn, signOut, startRenown],
+    [user, ready, error, signOut, startRenown],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -137,17 +147,4 @@ export function useAuth(): AuthValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
-}
-
-function shortDid(did: string): string {
-  const tail = did.split(":").pop() ?? did;
-  return tail.length > 10 ? `${tail.slice(0, 6)}…${tail.slice(-4)}` : tail;
-}
-
-function safeDecode(s: string): string {
-  try {
-    return decodeURIComponent(s);
-  } catch {
-    return s;
-  }
 }
