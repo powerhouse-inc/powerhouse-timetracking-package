@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { RENOWN_URL } from "./config";
-import { getAppDid } from "./renown";
+import { getAppDid, getAppIdentity, signChallenge } from "./renown";
 
 export interface Identity {
   address: string;
@@ -44,12 +44,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const params = new URLSearchParams(window.location.search);
     const rawUser = params.get("user");
 
-    async function establish(did: string) {
-      const res = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ did }),
-      });
+    async function establish(userDid: string) {
+      let res: Response;
+      try {
+        // Prove possession of the connect key: fetch a nonce, sign it, and send
+        // the signature + our connect DID/public key alongside the user DID.
+        const { did: appDid, publicJwk } = await getAppIdentity();
+        const { nonce } = (await fetch("/api/auth/challenge").then((r) =>
+          r.json(),
+        )) as { nonce: string };
+        const signature = await signChallenge(nonce);
+        res = await fetch("/api/auth/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userDid, appDid, publicJwk, signature }),
+        });
+      } catch {
+        if (!cancelled) {
+          setError("Sign-in failed.");
+          setReady(true);
+        }
+        return;
+      }
       // Strip ?user from the URL regardless of outcome.
       params.delete("user");
       const qs = params.toString();

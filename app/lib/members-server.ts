@@ -49,6 +49,7 @@ export async function findActiveMember(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query: MEMBERS_QUERY }),
     cache: "no-store",
+    signal: AbortSignal.timeout(10_000),
   });
   if (!res.ok) throw new Error(`reactor ${res.status}`);
   const json = (await res.json()) as {

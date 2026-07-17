@@ -36,7 +36,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script
           // Injected before hydration so config.ts sees it synchronously.
           dangerouslySetInnerHTML={{
-            __html: `window.__ENV=${JSON.stringify(runtimeEnv())}`,
+            // Escape < so a value can't break out of the inline <script>.
+            __html: `window.__ENV=${JSON.stringify(runtimeEnv()).replace(
+              /</g,
+              "\\u003c",
+            )}`,
           }}
         />
       </head>

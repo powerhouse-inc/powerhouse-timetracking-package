@@ -11,8 +11,10 @@
  * route handlers (node).
  */
 
-export const SESSION_COOKIE = "phop_session";
-export const SESSION_TTL_SECONDS = 60 * 60 * 12; // 12h
+// __Host- prefix: browser enforces Secure + Path=/ + no Domain, hardening
+// against subdomain cookie fixation.
+export const SESSION_COOKIE = "__Host-phop_session";
+export const SESSION_TTL_SECONDS = 60 * 60 * 2; // 2h — membership is also re-checked at the proxy
 
 export interface SessionPayload {
   address: string;
@@ -57,23 +59,25 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-export async function createSessionToken(
+/** Generic HMAC-signed, self-expiring token: `<base64url(json+exp)>.<sig>`. */
+export async function signToken(
   secret: string,
-  data: Omit<SessionPayload, "exp">,
+  data: Record<string, unknown>,
+  ttlSeconds: number,
 ): Promise<string> {
-  const payload: SessionPayload = {
+  const payload = {
     ...data,
-    exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS,
+    exp: Math.floor(Date.now() / 1000) + ttlSeconds,
   };
   const body = toBase64Url(enc.encode(JSON.stringify(payload)));
   const sig = await hmac(secret, body);
   return `${body}.${sig}`;
 }
 
-export async function verifySessionToken(
+export async function verifyToken<T = Record<string, unknown>>(
   secret: string,
   token: string | undefined | null,
-): Promise<SessionPayload | null> {
+): Promise<(T & { exp: number }) | null> {
   if (!secret || !token) return null;
   const dot = token.indexOf(".");
   if (dot < 1) return null;
@@ -82,9 +86,7 @@ export async function verifySessionToken(
   const expected = await hmac(secret, body);
   if (!safeEqual(sig, expected)) return null;
   try {
-    const payload = JSON.parse(
-      new TextDecoder().decode(fromBase64Url(body)),
-    ) as SessionPayload;
+    const payload = JSON.parse(new TextDecoder().decode(fromBase64Url(body)));
     if (
       typeof payload.exp !== "number" ||
       payload.exp < Math.floor(Date.now() / 1000)
@@ -95,4 +97,20 @@ export async function verifySessionToken(
   } catch {
     return null;
   }
+}
+
+export function createSessionToken(
+  secret: string,
+  data: Omit<SessionPayload, "exp">,
+): Promise<string> {
+  return signToken(secret, { ...data }, SESSION_TTL_SECONDS);
+}
+
+export async function verifySessionToken(
+  secret: string,
+  token: string | undefined | null,
+): Promise<SessionPayload | null> {
+  const p = await verifyToken<Omit<SessionPayload, "exp">>(secret, token);
+  if (!p || typeof p.address !== "string") return null;
+  return { address: p.address, name: p.name, role: p.role, exp: p.exp };
 }

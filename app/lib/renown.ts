@@ -1,80 +1,114 @@
 /**
- * Renown sign-in helpers.
+ * The browser's connect identity for Renown sign-in.
  *
- * Renown's web flow only renders when it receives the requesting app's DID as
- * the `connect` (a.k.a. `app`) query parameter — without it the page is blank
- * and the redirect never comes back. That DID is a self-certifying P-256
- * `did:key`, the same kind Powerhouse Connect derives via `@didtools/key-webcrypto`.
- * We generate one here with Web Crypto (no extra deps) and persist it so a
- * browser keeps a stable app identity across sign-ins.
+ * We generate a P-256 keypair (the "connect DID") once and keep it in
+ * IndexedDB with a NON-EXTRACTABLE private key — JS can sign with it but can
+ * never read it out. Renown's sign-in has the user's wallet issue a credential
+ * delegating their address to this connect DID; on return the server both
+ * looks that credential up at Renown AND makes us prove we still hold the
+ * connect private key (by signing a server nonce), so a leaked DID alone can't
+ * be replayed.
  */
 
-const APP_DID_KEY = "tt-app-did";
+import { bytesToB64url, didKeyFromJwk } from "./didkey";
 
-const B58_ALPHABET =
-  "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const DB_NAME = "phop-auth";
+const STORE = "kv";
+const KEY = "connect";
+const ALG = { name: "ECDSA", namedCurve: "P-256" } as const;
 
-function base58btc(bytes: Uint8Array): string {
-  const digits: number[] = [];
-  for (const byte of bytes) {
-    let carry = byte;
-    for (let i = 0; i < digits.length; i++) {
-      carry += digits[i] << 8;
-      digits[i] = carry % 58;
-      carry = (carry / 58) | 0;
-    }
-    while (carry > 0) {
-      digits.push(carry % 58);
-      carry = (carry / 58) | 0;
-    }
-  }
-  let out = "";
-  for (const byte of bytes) {
-    if (byte === 0) out += "1";
-    else break;
-  }
-  for (let i = digits.length - 1; i >= 0; i--) out += B58_ALPHABET[digits[i]];
-  return out;
+interface ConnectKey {
+  priv: CryptoKey; // non-extractable
+  publicJwk: JsonWebKey;
+  did: string;
 }
 
-// did:key for a P-256 public key = base58btc( varint(0x1200) ++ compressedPoint )
-// prefixed with "did:key:z". varint(0x1200) is the two bytes [0x80, 0x24];
-// the compressed point is 0x02/0x03 (Y parity) followed by the 32-byte X.
-async function generateAppDid(): Promise<string> {
-  const keyPair = await crypto.subtle.generateKey(
-    { name: "ECDSA", namedCurve: "P-256" },
-    true,
-    ["sign", "verify"],
-  );
-  // raw public key = 0x04 ++ X(32) ++ Y(32)
-  const raw = new Uint8Array(
-    await crypto.subtle.exportKey("raw", keyPair.publicKey),
-  );
-  const compressed = new Uint8Array(33);
-  compressed[0] = (raw[64] & 1) === 1 ? 0x03 : 0x02;
-  compressed.set(raw.slice(1, 33), 1);
-
-  const prefixed = new Uint8Array(35);
-  prefixed[0] = 0x80;
-  prefixed[1] = 0x24;
-  prefixed.set(compressed, 2);
-
-  return `did:key:z${base58btc(prefixed)}`;
+function openDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
-/** The stable app (connect) DID for this browser, generated on first use. */
+function idbGet<T>(key: string): Promise<T | undefined> {
+  return openDb().then(
+    (db) =>
+      new Promise<T | undefined>((resolve, reject) => {
+        const tx = db.transaction(STORE, "readonly").objectStore(STORE).get(key);
+        tx.onsuccess = () => resolve(tx.result as T | undefined);
+        tx.onerror = () => reject(tx.error);
+      }),
+  );
+}
+
+function idbSet(key: string, value: unknown): Promise<void> {
+  return openDb().then(
+    (db) =>
+      new Promise<void>((resolve, reject) => {
+        const tx = db
+          .transaction(STORE, "readwrite")
+          .objectStore(STORE)
+          .put(value, key);
+        tx.onsuccess = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      }),
+  );
+}
+
+let cache: ConnectKey | null = null;
+
+async function loadOrCreate(): Promise<ConnectKey> {
+  if (cache) return cache;
+  const existing = await idbGet<ConnectKey>(KEY);
+  if (existing?.priv && existing.did && existing.publicJwk) {
+    cache = existing;
+    return existing;
+  }
+  // Generate extractable, then re-import the private half as non-extractable
+  // and discard the extractable copy.
+  const pair = await crypto.subtle.generateKey(ALG, true, ["sign", "verify"]);
+  const publicJwk = await crypto.subtle.exportKey("jwk", pair.publicKey);
+  const privateJwk = await crypto.subtle.exportKey("jwk", pair.privateKey);
+  const priv = await crypto.subtle.importKey("jwk", privateJwk, ALG, false, [
+    "sign",
+  ]);
+  const did = didKeyFromJwk(publicJwk);
+  const rec: ConnectKey = { priv, publicJwk, did };
+  await idbSet(KEY, rec);
+  cache = rec;
+  return rec;
+}
+
+/** The connect DID + its public JWK (safe to send to the server). */
+export async function getAppIdentity(): Promise<{
+  did: string;
+  publicJwk: JsonWebKey;
+}> {
+  const k = await loadOrCreate();
+  return { did: k.did, publicJwk: k.publicJwk };
+}
+
+/** The connect DID string (used as `connect`/`app` in the Renown redirect). */
 export async function getAppDid(): Promise<string> {
-  const existing = localStorage.getItem(APP_DID_KEY);
-  if (existing) return existing;
-  const did = await generateAppDid();
-  localStorage.setItem(APP_DID_KEY, did);
-  return did;
+  return (await loadOrCreate()).did;
+}
+
+/** Prove possession of the connect private key by signing a server nonce. */
+export async function signChallenge(nonce: string): Promise<string> {
+  const k = await loadOrCreate();
+  const sig = await crypto.subtle.sign(
+    { name: "ECDSA", hash: "SHA-256" },
+    k.priv,
+    new TextEncoder().encode(nonce),
+  );
+  return bytesToB64url(new Uint8Array(sig));
 }
 
 /**
  * Renown returns the signed-in identity as `did:pkh:eip155:<chainId>:<address>`.
- * Workspace members are keyed by their plain lowercased Ethereum address, so we
- * pull that out for role matching. Falls back to the whole string lowercased.
+ * Workspace members are keyed by their plain lowercased Ethereum address.
  */
 export function addressFromDid(did: string): string {
   if (did.startsWith("did:pkh:")) {
