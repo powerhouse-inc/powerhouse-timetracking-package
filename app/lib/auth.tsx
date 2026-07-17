@@ -108,8 +108,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resolvedUser = useMemo<Identity | null>(() => {
     if (!user) return null;
     const addr = user.address.toLowerCase();
+    // Match an ACTIVE member — an archived one must not keep claiming the
+    // identity (that's what let a stale/duplicate member win by list order).
     const member = workspace?.members?.find(
-      (m) => m.address?.toLowerCase() === addr,
+      (m) => m.status !== "ARCHIVED" && m.address?.toLowerCase() === addr,
     );
     return member?.name && member.name !== user.name
       ? { ...user, name: member.name }

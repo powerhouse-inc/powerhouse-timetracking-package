@@ -56,7 +56,10 @@ export function useMyTimesheet(address: string | null | undefined) {
 export function useMyRole(address: string | null | undefined): Role | null {
   const { data: workspace } = useWorkspace();
   if (!address || !workspace) return null;
-  const member = workspace.members.find((m) => m.address === address);
+  const addr = address.toLowerCase();
+  const member = workspace.members.find(
+    (m) => m.status !== "ARCHIVED" && m.address?.toLowerCase() === addr,
+  );
   return member?.role ?? null;
 }
 
