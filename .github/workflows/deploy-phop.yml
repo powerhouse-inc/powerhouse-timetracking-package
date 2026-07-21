@@ -59,8 +59,11 @@ jobs:
       has_registry: ${{ steps.flags.outputs.has_registry }}
       has_harbor: ${{ steps.flags.outputs.has_harbor }}
       has_pat: ${{ steps.flags.outputs.has_pat }}
+      models_changed: ${{ steps.changed.outputs.models_changed }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - id: v
         run: |
           set -euo pipefail
@@ -70,6 +73,25 @@ jobs:
           V="${BASE}-ci.${GITHUB_RUN_NUMBER}"
           echo "version=$V" >> "$GITHUB_OUTPUT"
           echo "Deploy version: $V"
+      # Only republish the reactor package (a switchboard reload) when the
+      # models or package manifest actually changed — app-only pushes just roll
+      # the app image.
+      - id: changed
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "push" ] && [ -n "$BEFORE" ] && \
+             [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            if git diff --name-only "$BEFORE" "${{ github.sha }}" \
+                 | grep -qE '^(document-models/|package\.json)'; then
+              echo "models_changed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "models_changed=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "models_changed=true" >> "$GITHUB_OUTPUT"
+          fi
       # Expose which secrets are configured (secrets are usable in a step env,
       # not in a job-level if) so downstream jobs can skip cleanly when unset.
       - id: flags
@@ -114,7 +136,7 @@ jobs:
   publish-package:
     name: Publish reactor package (switchboard)
     needs: [prepare, build-test]
-    if: ${{ needs.prepare.outputs.has_registry == 'true' }}
+    if: ${{ needs.prepare.outputs.has_registry == 'true' && needs.prepare.outputs.models_changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -170,8 +192,12 @@ jobs:
 
   bump-tenant:
     name: Bump phop tenant (gitops)
-    needs: [prepare, publish-package, build-app-image]
-    if: ${{ needs.prepare.outputs.has_pat == 'true' }}
+    needs: [prepare, build-app-image, publish-package]
+    # Runs whenever the app image built — even if the package publish was
+    # skipped (app-only push) or failed (registry auth). The app always deploys.
+    if: >-
+      ${{ always() && needs.prepare.outputs.has_pat == 'true'
+          && needs.build-app-image.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout gitops repo
@@ -180,20 +206,25 @@ jobs:
           repository: ${{ env.TENANT_REPO }}
           ref: main
           token: ${{ secrets.PATNAME }}
-      - name: Bump switchboard package + app image tag
+      - name: Bump app image tag (+ switchboard package if it was published)
         env:
           V: ${{ needs.prepare.outputs.version }}
+          PUBLISHED: ${{ needs.publish-package.result }}
         run: |
           set -euo pipefail
           F="$TENANT_FILE"
-          # Switchboard: the package version it loads from the registry.
-          sed -i -E 's|^( *PH_REGISTRY_PACKAGES: ).*|\1"'"$PACKAGE_NAME"'@'"$V"'"|' "$F"
           # App: the (quoted) image tag — the switchboard tag is unquoted, so
-          # this only matches the app one.
+          # this only matches the app one. Always bumped.
           sed -i -E 's|^( *tag: )"[^"]*"|\1"'"$V"'"|' "$F"
-          grep -q "$PACKAGE_NAME@$V" "$F" || { echo "package bump failed" >&2; exit 1; }
-          grep -q "tag: \"$V\"" "$F"       || { echo "app tag bump failed" >&2; exit 1; }
-          echo "phop tenant bumped to $V"
+          grep -q "tag: \"$V\"" "$F" || { echo "app tag bump failed" >&2; exit 1; }
+          # Switchboard: only when the package was actually (re)published.
+          if [ "$PUBLISHED" = "success" ]; then
+            sed -i -E 's|^( *PH_REGISTRY_PACKAGES: ).*|\1"'"$PACKAGE_NAME"'@'"$V"'"|' "$F"
+            grep -q "$PACKAGE_NAME@$V" "$F" || { echo "package bump failed" >&2; exit 1; }
+            echo "phop tenant: app + switchboard package -> $V"
+          else
+            echo "phop tenant: app -> $V (switchboard package unchanged: publish=$PUBLISHED)"
+          fi
       - name: Commit and push
         env:
           V: ${{ needs.prepare.outputs.version }}
