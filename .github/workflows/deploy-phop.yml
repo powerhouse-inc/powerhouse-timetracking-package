@@ -137,7 +137,9 @@ jobs:
           set -euo pipefail
           npm version "$V" --no-git-tag-version --allow-same-version
           pnpm build
-          npm publish --registry "$PH_REGISTRY_URL"
+          # --tag ci: V is a prerelease, so npm requires an explicit dist-tag
+          # (keeps it off `latest`). The tenant pins the exact version anyway.
+          npm publish --registry "$PH_REGISTRY_URL" --tag ci
           echo "Published $PACKAGE_NAME@$V"
 
   build-app-image:
