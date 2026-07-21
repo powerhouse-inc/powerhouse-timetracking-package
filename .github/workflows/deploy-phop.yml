@@ -228,15 +228,21 @@ jobs:
       - name: Commit and push
         env:
           V: ${{ needs.prepare.outputs.version }}
+          PUBLISHED: ${{ needs.publish-package.result }}
         run: |
           set -euo pipefail
           if git diff --quiet; then
             echo "Already at $V — nothing to commit"; exit 0
           fi
+          if [ "$PUBLISHED" = "success" ]; then
+            MSG="chore(phop): deploy $V (app + switchboard package)"
+          else
+            MSG="chore(phop): deploy app $V"
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "$TENANT_FILE"
-          git commit -m "chore(phop): deploy $V (switchboard package + app image)"
+          git commit -m "$MSG"
           git push
 
   summary:
