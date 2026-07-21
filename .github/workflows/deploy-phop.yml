@@ -45,7 +45,7 @@ env:
   PNPM_VERSION: "10"
   HARBOR_REGISTRY: cr.vetra.io
   APP_IMAGE: cr.vetra.io/powerhouse-inc-powerhouse/phop-app
-  PACKAGE_NAME: ph-timetracking-package
+  PACKAGE_NAME: powerhouse-operations-package
   PH_REGISTRY_URL: https://registry.dev.vetra.io
   TENANT_REPO: powerhouse-inc/powerhouse-k8s-hosting
   TENANT_FILE: tenants/phop/powerhouse-values.yaml

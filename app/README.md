@@ -1,6 +1,6 @@
 # Powerhouse Time — web app
 
-A Toggl-style time-tracking UI for the `ph-timetracking-package` reactor. Dark,
+A Toggl-style time-tracking UI for the `powerhouse-operations-package` reactor. Dark,
 Manrope-typed, magenta-accented. Self-contained Next.js 15 (App Router) project;
 it is intentionally excluded from the package build (`tsconfig.json` /
 `eslint.config.js` ignore `app/`).
