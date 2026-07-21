@@ -1,0 +1,226 @@
+# Auto-deploy the phop tenant on every push to master.
+#
+# On push to master (or manual dispatch) this:
+#   1. builds + type-checks + tests the package and builds the app (gate),
+#   2. publishes the reactor package to the Powerhouse registry (this is what
+#      the SWITCHBOARD loads — a new version ships new document models),
+#   3. builds + pushes the Next.js app image to Harbor,
+#   4. bumps BOTH the switchboard package version and the app image tag in the
+#      phop tenant values of the gitops repo (powerhouse-k8s-hosting), which
+#      ArgoCD then syncs — rolling the switchboard and the app.
+#
+# One version string (V = <package version>-ci.<run number>) tags the package,
+# the app image, and both tenant fields, so a deploy is traceable end-to-end.
+#
+# ── REPO SECRETS REQUIRED (add via GitHub → repo Settings → Secrets) ──────────
+#   HARBOR_USERNAME    Harbor robot account with push to cr.vetra.io/powerhouse-inc-powerhouse/*
+#   HARBOR_PASSWORD    token for that robot account
+#   PH_REGISTRY_TOKEN  bearer token for https://registry.dev.vetra.io (package publish).
+#                      Generate with `ph registry-login` locally and copy the
+#                      //registry.dev.vetra.io/:_authToken value from ~/.npmrc.
+#   PATNAME            GitHub PAT with `repo` scope on powerhouse-k8s-hosting so
+#                      the values bump can be pushed (satisfies branch protection).
+# Jobs that need a missing secret are SKIPPED (shown grey), not silently green.
+
+name: deploy phop
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "app/**"
+      - "document-models/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/deploy-phop.yml"
+  workflow_dispatch:
+
+# Never run two deploys of the same branch at once; a newer push supersedes.
+concurrency:
+  group: deploy-phop-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10"
+  HARBOR_REGISTRY: cr.vetra.io
+  APP_IMAGE: cr.vetra.io/powerhouse-inc-powerhouse/phop-app
+  PACKAGE_NAME: ph-timetracking-package
+  PH_REGISTRY_URL: https://registry.dev.vetra.io
+  TENANT_REPO: powerhouse-inc/powerhouse-k8s-hosting
+  TENANT_FILE: tenants/phop/powerhouse-values.yaml
+
+jobs:
+  prepare:
+    name: Prepare version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      has_registry: ${{ steps.flags.outputs.has_registry }}
+      has_harbor: ${{ steps.flags.outputs.has_harbor }}
+      has_pat: ${{ steps.flags.outputs.has_pat }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          set -euo pipefail
+          BASE=$(node -p "require('./package.json').version")
+          # Strip any existing prerelease so re-runs stay clean semver.
+          BASE="${BASE%%-*}"
+          V="${BASE}-ci.${GITHUB_RUN_NUMBER}"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Deploy version: $V"
+      # Expose which secrets are configured (secrets are usable in a step env,
+      # not in a job-level if) so downstream jobs can skip cleanly when unset.
+      - id: flags
+        env:
+          HAS_REGISTRY: ${{ secrets.PH_REGISTRY_TOKEN != '' }}
+          HAS_HARBOR: ${{ secrets.HARBOR_PASSWORD != '' }}
+          HAS_PAT: ${{ secrets.PATNAME != '' }}
+        run: |
+          echo "has_registry=$HAS_REGISTRY" >> "$GITHUB_OUTPUT"
+          echo "has_harbor=$HAS_HARBOR" >> "$GITHUB_OUTPUT"
+          echo "has_pat=$HAS_PAT" >> "$GITHUB_OUTPUT"
+
+  build-test:
+    name: Build & test (gate)
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install (package)
+        run: pnpm install --frozen-lockfile
+      - name: Build package
+        run: pnpm build
+      - name: Typecheck
+        run: pnpm tsc
+      - name: Lint
+        run: pnpm lint
+      - name: Reducer tests
+        run: pnpm test
+      - name: Build app
+        working-directory: app
+        run: |
+          npm ci
+          npm run build
+
+  publish-package:
+    name: Publish reactor package (switchboard)
+    needs: [prepare, build-test]
+    if: ${{ needs.prepare.outputs.has_registry == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Authenticate to the Powerhouse registry
+        run: |
+          echo "//registry.dev.vetra.io/:_authToken=${{ secrets.PH_REGISTRY_TOKEN }}" >> ~/.npmrc
+      - name: Set version, build and publish
+        env:
+          V: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          npm version "$V" --no-git-tag-version --allow-same-version
+          pnpm build
+          npm publish --registry "$PH_REGISTRY_URL"
+          echo "Published $PACKAGE_NAME@$V"
+
+  build-app-image:
+    name: Build & push app image
+    needs: [prepare, build-test]
+    if: ${{ needs.prepare.outputs.has_harbor == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.HARBOR_REGISTRY }}
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: app
+          file: app/Dockerfile
+          push: true
+          tags: |
+            ${{ env.APP_IMAGE }}:${{ needs.prepare.outputs.version }}
+            ${{ env.APP_IMAGE }}:master
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  bump-tenant:
+    name: Bump phop tenant (gitops)
+    needs: [prepare, publish-package, build-app-image]
+    if: ${{ needs.prepare.outputs.has_pat == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gitops repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TENANT_REPO }}
+          ref: main
+          token: ${{ secrets.PATNAME }}
+      - name: Bump switchboard package + app image tag
+        env:
+          V: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          F="$TENANT_FILE"
+          # Switchboard: the package version it loads from the registry.
+          sed -i -E 's|^( *PH_REGISTRY_PACKAGES: ).*|\1"'"$PACKAGE_NAME"'@'"$V"'"|' "$F"
+          # App: the (quoted) image tag — the switchboard tag is unquoted, so
+          # this only matches the app one.
+          sed -i -E 's|^( *tag: )"[^"]*"|\1"'"$V"'"|' "$F"
+          grep -q "$PACKAGE_NAME@$V" "$F" || { echo "package bump failed" >&2; exit 1; }
+          grep -q "tag: \"$V\"" "$F"       || { echo "app tag bump failed" >&2; exit 1; }
+          echo "phop tenant bumped to $V"
+      - name: Commit and push
+        env:
+          V: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "Already at $V — nothing to commit"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$TENANT_FILE"
+          git commit -m "chore(phop): deploy $V (switchboard package + app image)"
+          git push
+
+  summary:
+    name: Summary
+    needs: [prepare, build-test, publish-package, build-app-image, bump-tenant]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          {
+            echo "## phop deploy"
+            echo ""
+            echo "| step | result |"
+            echo "|------|--------|"
+            echo "| version | \`${{ needs.prepare.outputs.version }}\` |"
+            echo "| build & test | ${{ needs.build-test.result }} |"
+            echo "| publish package | ${{ needs.publish-package.result }} |"
+            echo "| app image | ${{ needs.build-app-image.result }} |"
+            echo "| bump tenant | ${{ needs.bump-tenant.result }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
