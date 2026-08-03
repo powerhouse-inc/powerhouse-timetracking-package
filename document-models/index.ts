@@ -1,6 +1,7 @@
 export { AccountTransactions as AccountTransactionsV1 } from "./account-transactions/v1/module.js";
 export { Accounts as AccountsV1 } from "./accounts/v1/module.js";
 export { BillingStatement as BillingStatementV1 } from "./billing-statement/v1/module.js";
+export { Content as ContentV1 } from "./content/v1/module.js";
 export { ExpenseReport as ExpenseReportV1 } from "./expense-report/v1/module.js";
 export { Invoice as InvoiceV1 } from "./invoice/v1/module.js";
 export { LeadFunnel as LeadFunnelV1 } from "./lead-funnel/v1/module.js";

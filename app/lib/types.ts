@@ -440,3 +440,69 @@ export interface SurveyDoc {
   publishedAt: string | null;
   closedAt: string | null;
 }
+
+/* ------------------------------- Content ------------------------------- */
+
+export type ContentStage =
+  | "IDEA"
+  | "DRAFTING"
+  | "REVIEW"
+  | "SCHEDULED"
+  | "PUBLISHED"
+  | "REPURPOSE";
+export type ContentStatus = "ACTIVE" | "PARKED" | "KILLED";
+export type ContentFormat =
+  | "POST"
+  | "ARTICLE"
+  | "VIDEO"
+  | "ONE_PAGER"
+  | "DM_SCRIPT"
+  | "LEAD_MAGNET"
+  | "OTHER";
+export type ContentChannel =
+  | "LINKEDIN"
+  | "REDDIT"
+  | "DISCORD"
+  | "TELEGRAM"
+  | "FACEBOOK_GROUP"
+  | "FORUM"
+  | "DIRECTORY"
+  | "EMAIL"
+  | "WEB"
+  | "OTHER";
+
+export interface ContentStageEvent {
+  id: string;
+  fromStage: ContentStage | null;
+  toStage: ContentStage;
+  actor: string | null;
+  timestamp: string;
+  note: string | null;
+}
+export interface ContentAssetLink {
+  id: string;
+  label: string | null;
+  url: string;
+}
+export interface ContentDoc {
+  id: string;
+  name: string;
+  title: string;
+  brief: string | null;
+  format: ContentFormat;
+  channels: ContentChannel[];
+  currentStage: ContentStage;
+  status: ContentStatus;
+  dispositionReason: string | null;
+  owner: string | null;
+  targetDate: string | null;
+  publishedUrl: string | null;
+  publishedDate: string | null;
+  draftUrl: string | null;
+  assetLinks: ContentAssetLink[];
+  campaignId: string | null;
+  campaignName: string | null;
+  history: ContentStageEvent[];
+  createdAt: string | null;
+  updatedAt: string | null;
+}

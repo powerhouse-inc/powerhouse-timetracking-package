@@ -9,6 +9,10 @@ import type {
   BillingStatementDoc,
   BillingStatementStatus,
   BillingUnit,
+  ContentChannel,
+  ContentDoc,
+  ContentFormat,
+  ContentStage,
   DeliverableStatus,
   ExpenseReportDoc,
   ExpenseReportStatus,
@@ -1654,5 +1658,190 @@ export const surveyApi = {
     mutate("Survey", "deleteResponse", "docId: $docId, input: $input", {
       docId,
       input: { id },
+    }),
+};
+
+/* ------------------------------- Content ------------------------------- */
+
+const CONTENT_QUERY = `
+  query {
+    Content {
+      documents {
+        items {
+          id
+          name
+          state {
+            global {
+              title
+              brief
+              format
+              channels
+              currentStage
+              status
+              dispositionReason
+              owner
+              targetDate
+              publishedUrl
+              publishedDate
+              draftUrl
+              assetLinks { id label url }
+              campaignId
+              campaignName
+              history { id fromStage toStage actor timestamp note }
+              createdAt
+              updatedAt
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+interface ContentItem {
+  id: string;
+  name: string;
+  state: { global: Omit<ContentDoc, "id" | "name"> };
+}
+
+export async function fetchContentItems(): Promise<ContentDoc[]> {
+  const data = await gql<{ Content: { documents: { items: ContentItem[] } } }>(
+    CONTENT_QUERY,
+  );
+  return data.Content.documents.items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    ...item.state.global,
+  }));
+}
+
+async function createContentDocument(name: string): Promise<string> {
+  const data = await gql<{ Content: { createDocument: { id: string } } }>(
+    `mutation($name: String!, $parent: String) {
+      Content { createDocument(name: $name, parentIdentifier: $parent) { id } }
+    }`,
+    { name, parent: DRIVE_ID },
+  );
+  return data.Content.createDocument.id;
+}
+
+export async function createContentItem(title: string): Promise<string> {
+  const id = await createContentDocument(title || "Untitled content");
+  await contentApi.setTitle(id, title);
+  return id;
+}
+
+export interface NewAssetLinkInput {
+  label: string | null;
+  url: string;
+}
+
+/** One method per content operation. Ids/timestamps are minted client-side. */
+export const contentApi = {
+  setTitle: (docId: string, title: string) =>
+    mutate("Content", "setTitle", "docId: $docId, input: $input", {
+      docId,
+      input: { title },
+    }),
+  setBrief: (docId: string, brief: string | null) =>
+    mutate("Content", "setBrief", "docId: $docId, input: $input", {
+      docId,
+      input: { brief },
+    }),
+  setFormat: (docId: string, format: ContentFormat) =>
+    mutate("Content", "setFormat", "docId: $docId, input: $input", {
+      docId,
+      input: { format },
+    }),
+  setChannels: (docId: string, channels: ContentChannel[]) =>
+    mutate("Content", "setChannels", "docId: $docId, input: $input", {
+      docId,
+      input: { channels },
+    }),
+  setTargetDate: (docId: string, targetDate: string | null) =>
+    mutate("Content", "setTargetDate", "docId: $docId, input: $input", {
+      docId,
+      input: { targetDate },
+    }),
+  setDraftUrl: (docId: string, draftUrl: string | null) =>
+    mutate("Content", "setDraftUrl", "docId: $docId, input: $input", {
+      docId,
+      input: { draftUrl },
+    }),
+  setCampaign: (docId: string, campaignId: string | null, campaignName: string | null) =>
+    mutate("Content", "setCampaign", "docId: $docId, input: $input", {
+      docId,
+      input: { campaignId, campaignName },
+    }),
+  addAssetLink: (docId: string, input: NewAssetLinkInput) =>
+    mutate("Content", "addAssetLink", "docId: $docId, input: $input", {
+      docId,
+      input: { id: randomId(), label: input.label, url: input.url },
+    }),
+  updateAssetLink: (
+    docId: string,
+    id: string,
+    patch: { label?: string | null; url?: string },
+  ) =>
+    mutate("Content", "updateAssetLink", "docId: $docId, input: $input", {
+      docId,
+      input: { id, ...patch },
+    }),
+  removeAssetLink: (docId: string, id: string) =>
+    mutate("Content", "removeAssetLink", "docId: $docId, input: $input", {
+      docId,
+      input: { id },
+    }),
+  assignOwner: (docId: string, owner: string) =>
+    mutate("Content", "assignOwner", "docId: $docId, input: $input", {
+      docId,
+      input: { owner, timestamp: new Date().toISOString() },
+    }),
+  advanceStage: (
+    docId: string,
+    toStage: ContentStage,
+    opts: { actor?: string | null; note?: string | null } = {},
+  ) =>
+    mutate("Content", "advanceStage", "docId: $docId, input: $input", {
+      docId,
+      input: {
+        eventId: randomId(),
+        toStage,
+        actor: opts.actor ?? null,
+        note: opts.note ?? null,
+        timestamp: new Date().toISOString(),
+      },
+    }),
+  publish: (
+    docId: string,
+    publishedUrl: string,
+    publishedDate: string,
+    opts: { actor?: string | null; note?: string | null } = {},
+  ) =>
+    mutate("Content", "publish", "docId: $docId, input: $input", {
+      docId,
+      input: {
+        eventId: randomId(),
+        publishedUrl,
+        publishedDate,
+        actor: opts.actor ?? null,
+        note: opts.note ?? null,
+        timestamp: new Date().toISOString(),
+      },
+    }),
+  park: (docId: string, reason: string, actor: string | null = null) =>
+    mutate("Content", "park", "docId: $docId, input: $input", {
+      docId,
+      input: { eventId: randomId(), reason, actor, timestamp: new Date().toISOString() },
+    }),
+  kill: (docId: string, reason: string, actor: string | null = null) =>
+    mutate("Content", "kill", "docId: $docId, input: $input", {
+      docId,
+      input: { eventId: randomId(), reason, actor, timestamp: new Date().toISOString() },
+    }),
+  resume: (docId: string, actor: string | null = null) =>
+    mutate("Content", "resume", "docId: $docId, input: $input", {
+      docId,
+      input: { eventId: randomId(), actor, timestamp: new Date().toISOString() },
     }),
 };

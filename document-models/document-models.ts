@@ -1,6 +1,7 @@
 import { AccountTransactions as AccountTransactionsV1 } from "document-models/account-transactions/v1";
 import { Accounts as AccountsV1 } from "document-models/accounts/v1";
 import { BillingStatement as BillingStatementV1 } from "document-models/billing-statement/v1";
+import { Content as ContentV1 } from "document-models/content/v1";
 import { ExpenseReport as ExpenseReportV1 } from "document-models/expense-report/v1";
 import { Invoice as InvoiceV1 } from "document-models/invoice/v1";
 import { LeadFunnel as LeadFunnelV1 } from "document-models/lead-funnel/v1";
@@ -20,6 +21,7 @@ export const documentModels = [
   AccountTransactionsV1,
   AccountsV1,
   BillingStatementV1,
+  ContentV1,
   ExpenseReportV1,
   InvoiceV1,
   LeadFunnelV1,

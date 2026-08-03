@@ -54,6 +54,10 @@
     {
       "id": "powerhouse-ops/survey",
       "name": "Survey"
+    },
+    {
+      "id": "powerhouse-ops/content",
+      "name": "Content"
     }
   ],
   "apps": [],
@@ -74,7 +78,7 @@
     },
     {
       "id": "tt-drive",
-      "name": "Timetracking — Team",
+      "name": "Timetracking \u2014 Team",
       "documentTypes": [
         "powerhouse/document-drive"
       ]

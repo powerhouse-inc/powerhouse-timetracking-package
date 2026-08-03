@@ -6,6 +6,7 @@ import type { UpgradeManifest } from "document-model";
 import { accountTransactionsUpgradeManifest } from "document-models/account-transactions/upgrades";
 import { accountsUpgradeManifest } from "document-models/accounts/upgrades";
 import { billingStatementUpgradeManifest } from "document-models/billing-statement/upgrades";
+import { contentUpgradeManifest } from "document-models/content/upgrades";
 import { expenseReportUpgradeManifest } from "document-models/expense-report/upgrades";
 import { invoiceUpgradeManifest } from "document-models/invoice/upgrades";
 import { leadFunnelUpgradeManifest } from "document-models/lead-funnel/upgrades";
@@ -20,6 +21,7 @@ export const upgradeManifests: UpgradeManifest<readonly number[]>[] = [
   accountTransactionsUpgradeManifest,
   accountsUpgradeManifest,
   billingStatementUpgradeManifest,
+  contentUpgradeManifest,
   expenseReportUpgradeManifest,
   invoiceUpgradeManifest,
   leadFunnelUpgradeManifest,

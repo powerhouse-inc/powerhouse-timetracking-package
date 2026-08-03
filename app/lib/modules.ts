@@ -28,7 +28,8 @@ export type ModuleKey =
   | "projects"
   | "clients"
   | "members"
-  | "surveys";
+  | "surveys"
+  | "content";
 
 const DEFAULT_ENABLED = "dashboard,sales,clients,members";
 
@@ -59,6 +60,7 @@ export const ROUTE_MODULE: Record<string, ModuleKey> = {
   "/reports": "reports",
   "/profitability": "profitability",
   "/sales": "sales",
+  "/content": "content",
   "/delivery": "delivery",
   "/submit-invoice": "submitInvoice",
   "/invoices": "invoices",

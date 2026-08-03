@@ -1,0 +1,185 @@
+scalar Unknown
+scalar DateTime
+scalar Address
+scalar AttachmentRef
+scalar Amount_Tokens
+scalar EthereumAddress
+scalar EmailAddress
+scalar Amount_Percentage
+scalar Date
+scalar URL
+scalar Amount_Money
+scalar OLabel
+scalar Currency
+scalar PHID
+scalar OID
+scalar Amount_Fiat
+scalar Amount_Currency
+scalar Amount_Crypto
+scalar Amount
+scalar Upload
+
+enum ContentStage {
+  IDEA
+  DRAFTING
+  REVIEW
+  SCHEDULED
+  PUBLISHED
+  REPURPOSE
+}
+
+enum ContentStatus {
+  ACTIVE
+  PARKED
+  KILLED
+}
+
+enum ContentFormat {
+  POST
+  ARTICLE
+  VIDEO
+  ONE_PAGER
+  DM_SCRIPT
+  LEAD_MAGNET
+  OTHER
+}
+
+enum ContentChannel {
+  LINKEDIN
+  REDDIT
+  DISCORD
+  TELEGRAM
+  FACEBOOK_GROUP
+  FORUM
+  DIRECTORY
+  EMAIL
+  WEB
+  OTHER
+}
+
+type StageEvent {
+  id: OID!
+  fromStage: ContentStage
+  toStage: ContentStage!
+  actor: String
+  timestamp: DateTime!
+  note: String
+}
+
+type AssetLink {
+  id: OID!
+  label: String
+  url: URL!
+}
+
+type ContentState {
+  title: String!
+  brief: String
+  format: ContentFormat!
+  channels: [ContentChannel!]!
+  currentStage: ContentStage!
+  status: ContentStatus!
+  dispositionReason: String
+  owner: String
+  targetDate: Date
+  publishedUrl: URL
+  publishedDate: Date
+  draftUrl: URL
+  assetLinks: [AssetLink!]!
+  campaignId: PHID
+  campaignName: String
+  history: [StageEvent!]!
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+# definition
+
+input SetTitleInput {
+  title: String!
+}
+
+input SetBriefInput {
+  brief: String
+}
+
+input SetFormatInput {
+  format: ContentFormat!
+}
+
+input SetChannelsInput {
+  channels: [ContentChannel!]!
+}
+
+input SetTargetDateInput {
+  targetDate: Date
+}
+
+input SetDraftUrlInput {
+  draftUrl: URL
+}
+
+input SetCampaignInput {
+  campaignId: PHID
+  campaignName: String
+}
+
+input AddAssetLinkInput {
+  id: OID!
+  label: String
+  url: URL!
+}
+
+input UpdateAssetLinkInput {
+  id: OID!
+  label: String
+  url: URL
+}
+
+input RemoveAssetLinkInput {
+  id: OID!
+}
+
+# lifecycle
+
+input AssignOwnerInput {
+  owner: String!
+  timestamp: DateTime!
+}
+
+input AdvanceStageInput {
+  eventId: OID!
+  toStage: ContentStage!
+  actor: String
+  timestamp: DateTime!
+  note: String
+}
+
+input PublishInput {
+  eventId: OID!
+  publishedUrl: URL!
+  publishedDate: Date!
+  actor: String
+  timestamp: DateTime!
+  note: String
+}
+
+input ParkInput {
+  eventId: OID!
+  reason: String!
+  actor: String
+  timestamp: DateTime!
+}
+
+input KillInput {
+  eventId: OID!
+  reason: String!
+  actor: String
+  timestamp: DateTime!
+}
+
+input ResumeInput {
+  eventId: OID!
+  actor: String
+  timestamp: DateTime!
+}

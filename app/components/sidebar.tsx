@@ -43,7 +43,10 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
   },
   {
     heading: "Sales",
-    items: [{ href: "/sales", label: "Pipeline", icon: "◈", module: "sales" }],
+    items: [
+      { href: "/sales", label: "Pipeline", icon: "◈", module: "sales" },
+      { href: "/content", label: "Content", icon: "✐", module: "content" },
+    ],
   },
   {
     heading: "Delivery",

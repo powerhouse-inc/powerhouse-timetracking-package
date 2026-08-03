@@ -5,6 +5,7 @@ import {
   fetchAccounts,
   fetchAccountTransactions,
   fetchBillingStatements,
+  fetchContentItems,
   fetchExpenseReports,
   fetchInvoices,
   fetchLeadFunnel,
@@ -21,6 +22,7 @@ import type {
   AccountEntry,
   AccountTransactionsDoc,
   BillingStatementDoc,
+  ContentDoc,
   ExpenseReportDoc,
   InvoiceDoc,
   Role,
@@ -137,6 +139,14 @@ export function useSurveys() {
   });
 }
 
+export function useContentItems() {
+  return useQuery<ContentDoc[]>({
+    queryKey: ["content"],
+    queryFn: fetchContentItems,
+    refetchInterval: 4000,
+  });
+}
+
 /** Invalidate the read queries after a mutation so the UI reflects changes fast. */
 export function useRefresh() {
   const qc = useQueryClient();
@@ -148,6 +158,7 @@ export function useRefresh() {
     void qc.invalidateQueries({ queryKey: ["invoices"] });
     void qc.invalidateQueries({ queryKey: ["billingStatements"] });
     void qc.invalidateQueries({ queryKey: ["surveys"] });
+    void qc.invalidateQueries({ queryKey: ["content"] });
   };
 }
 
