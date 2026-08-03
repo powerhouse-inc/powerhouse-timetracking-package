@@ -16,7 +16,7 @@
           "initialValue": ""
         },
         "global": {
-          "schema": "enum ContentStage {\n  IDEA\n  DRAFTING\n  REVIEW\n  SCHEDULED\n  PUBLISHED\n  REPURPOSE\n}\n\nenum ContentStatus {\n  ACTIVE\n  PARKED\n  KILLED\n}\n\nenum ContentFormat {\n  POST\n  ARTICLE\n  VIDEO\n  ONE_PAGER\n  DM_SCRIPT\n  LEAD_MAGNET\n  OTHER\n}\n\nenum ContentChannel {\n  LINKEDIN\n  REDDIT\n  DISCORD\n  TELEGRAM\n  FACEBOOK_GROUP\n  FORUM\n  DIRECTORY\n  EMAIL\n  WEB\n  OTHER\n}\n\ntype StageEvent {\n  id: OID!\n  fromStage: ContentStage\n  toStage: ContentStage!\n  actor: String\n  timestamp: DateTime!\n  note: String\n}\n\ntype AssetLink {\n  id: OID!\n  label: String\n  url: URL!\n}\n\ntype ContentState {\n  title: String!\n  brief: String\n  format: ContentFormat!\n  channels: [ContentChannel!]!\n  currentStage: ContentStage!\n  status: ContentStatus!\n  dispositionReason: String\n  owner: String\n  targetDate: Date\n  publishedUrl: URL\n  publishedDate: Date\n  draftUrl: URL\n  assetLinks: [AssetLink!]!\n  campaignId: PHID\n  campaignName: String\n  history: [StageEvent!]!\n  createdAt: DateTime\n  updatedAt: DateTime\n}",
+          "schema": "enum ContentStage {\n  IDEA\n  DRAFTING\n  REVIEW\n  SCHEDULED\n  PUBLISHED\n  REPURPOSE\n}\n\nenum ContentStatus {\n  ACTIVE\n  PARKED\n  KILLED\n}\n\nenum ContentFormat {\n  POST\n  ARTICLE\n  VIDEO\n  ONE_PAGER\n  DM_SCRIPT\n  LEAD_MAGNET\n  OTHER\n}\n\nenum ContentChannel {\n  LINKEDIN\n  REDDIT\n  DISCORD\n  TELEGRAM\n  FACEBOOK_GROUP\n  FORUM\n  DIRECTORY\n  EMAIL\n  WEB\n  OTHER\n}\n\ntype StageEvent {\n  id: OID!\n  fromStage: ContentStage\n  toStage: ContentStage!\n  actor: String\n  timestamp: DateTime!\n  note: String\n}\n\ntype AssetLink {\n  id: OID!\n  label: String\n  url: URL\n  attachmentRef: String\n  fileName: String\n  mimeType: String\n  sizeBytes: Int\n}\n\ntype ContentState {\n  title: String!\n  brief: String\n  format: ContentFormat!\n  channels: [ContentChannel!]!\n  currentStage: ContentStage!\n  status: ContentStatus!\n  dispositionReason: String\n  owner: String\n  targetDate: Date\n  publishedUrl: URL\n  publishedDate: Date\n  draftUrl: URL\n  assetLinks: [AssetLink!]!\n  campaignId: PHID\n  campaignName: String\n  history: [StageEvent!]!\n  createdAt: DateTime\n  updatedAt: DateTime\n}",
           "examples": [],
           "initialValue": "{\n  \"title\": \"\",\n  \"brief\": null,\n  \"format\": \"POST\",\n  \"channels\": [],\n  \"currentStage\": \"IDEA\",\n  \"status\": \"ACTIVE\",\n  \"dispositionReason\": null,\n  \"owner\": null,\n  \"targetDate\": null,\n  \"publishedUrl\": null,\n  \"publishedDate\": null,\n  \"draftUrl\": null,\n  \"assetLinks\": [],\n  \"campaignId\": null,\n  \"campaignName\": null,\n  \"history\": [],\n  \"createdAt\": null,\n  \"updatedAt\": null\n}"
         }
@@ -108,10 +108,18 @@
               "id": "a5f395f7-d9b4-45c4-b5c8-64e2db3444e1",
               "name": "ADD_ASSET_LINK",
               "description": "Add a related-asset link.",
-              "schema": "input AddAssetLinkInput {\n  id: OID!\n  label: String\n  url: URL!\n}",
+              "schema": "input AddAssetLinkInput {\n  id: OID!\n  label: String\n  url: URL\n  attachmentRef: String\n  fileName: String\n  mimeType: String\n  sizeBytes: Int\n}",
               "template": "",
-              "reducer": "state.assetLinks.push({\n  id: action.input.id,\n  label: action.input.label || null,\n  url: action.input.url,\n});",
-              "errors": [],
+              "reducer": "if (!action.input.url && !action.input.attachmentRef) {\n  throw new AssetSourceRequiredError(\n    \"An asset link needs either a url or an uploaded file\",\n  );\n}\nstate.assetLinks.push({\n  id: action.input.id,\n  label: action.input.label || null,\n  url: action.input.url || null,\n  attachmentRef: action.input.attachmentRef || null,\n  fileName: action.input.fileName || null,\n  mimeType: action.input.mimeType || null,\n  sizeBytes: action.input.sizeBytes ?? null,\n});",
+              "errors": [
+                {
+                  "id": "b1c2d3e4-0000-0000-0000-000000000001",
+                  "name": "AssetSourceRequiredError",
+                  "code": "ASSET_SOURCE_REQUIRED",
+                  "description": "An asset link must have either a url or an uploaded attachment.",
+                  "template": ""
+                }
+              ],
               "examples": [],
               "scope": "global"
             },

@@ -69,7 +69,11 @@ type StageEvent {
 type AssetLink {
   id: OID!
   label: String
-  url: URL!
+  url: URL
+  attachmentRef: String
+  fileName: String
+  mimeType: String
+  sizeBytes: Int
 }
 
 type ContentState {
@@ -127,7 +131,11 @@ input SetCampaignInput {
 input AddAssetLinkInput {
   id: OID!
   label: String
-  url: URL!
+  url: URL
+  attachmentRef: String
+  fileName: String
+  mimeType: String
+  sizeBytes: Int
 }
 
 input UpdateAssetLinkInput {

@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { contentApi } from "@/lib/api";
+import {
+  attachmentHref,
+  formatBytes,
+  isImageMime,
+  uploadAttachment,
+} from "@/lib/attachments";
 import {
   CONTENT_CHANNELS,
   CONTENT_FORMATS,
@@ -12,7 +18,13 @@ import {
   stageMeta,
   toDateInput,
 } from "@/lib/content";
-import type { ContentChannel, ContentDoc, ContentFormat } from "@/lib/types";
+import { toast } from "@/lib/toast";
+import type {
+  ContentAssetLink,
+  ContentChannel,
+  ContentDoc,
+  ContentFormat,
+} from "@/lib/types";
 
 export function ContentItemDetail({
   item,
@@ -383,8 +395,10 @@ function AssetLinks({
 }) {
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const add = async () => {
+  const addLink = async () => {
     if (!url.trim()) return;
     await contentApi.addAssetLink(item.id, {
       label: label.trim() || null,
@@ -395,39 +409,49 @@ function AssetLinks({
     onChange();
   };
 
+  const onFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const a = await uploadAttachment(file);
+        await contentApi.addAssetLink(item.id, {
+          label: label.trim() || a.fileName,
+          attachmentRef: a.ref,
+          fileName: a.fileName,
+          mimeType: a.mimeType,
+          sizeBytes: a.sizeBytes,
+        });
+      }
+      setLabel("");
+      onChange();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Upload failed", "error");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
   return (
     <div>
-      <label className="tt-label">Asset links</label>
+      <label className="tt-label">Assets</label>
       <ul className="mb-2 flex flex-col gap-1.5">
         {item.assetLinks.map((a) => (
-          <li
+          <AssetRow
             key={a.id}
-            className="flex items-center gap-2 rounded-lg bg-ink-700/50 px-3 py-2 text-sm"
-          >
-            <a
-              className="min-w-0 flex-1 truncate text-magenta hover:underline"
-              href={a.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {a.label || a.url}
-            </a>
-            <button
-              className="text-xs text-mist-400 hover:text-red-400"
-              onClick={async () => {
-                await contentApi.removeAssetLink(item.id, a.id);
-                onChange();
-              }}
-            >
-              ✕
-            </button>
-          </li>
+            asset={a}
+            onRemove={async () => {
+              await contentApi.removeAssetLink(item.id, a.id);
+              onChange();
+            }}
+          />
         ))}
         {item.assetLinks.length === 0 && (
-          <li className="text-sm text-mist-400">No links yet.</li>
+          <li className="text-sm text-mist-400">No assets yet.</li>
         )}
       </ul>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           className="tt-input w-28"
           placeholder="Label"
@@ -439,13 +463,66 @@ function AssetLinks({
           placeholder="https://…"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && add()}
+          onKeyDown={(e) => e.key === "Enter" && addLink()}
         />
-        <button className="tt-btn-ghost" onClick={add} disabled={!url.trim()}>
-          Add
+        <button className="tt-btn-ghost" onClick={addLink} disabled={!url.trim()}>
+          Add link
         </button>
+        <button
+          className="tt-btn-ghost"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? "Uploading…" : "Upload file"}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(e) => onFiles(e.target.files)}
+        />
       </div>
     </div>
+  );
+}
+
+function AssetRow({
+  asset,
+  onRemove,
+}: {
+  asset: ContentAssetLink;
+  onRemove: () => void;
+}) {
+  const isUpload = !!asset.attachmentRef;
+  const href = isUpload ? attachmentHref(asset.attachmentRef) : asset.url;
+  const name = asset.label || asset.fileName || asset.url || "asset";
+  const icon = isUpload ? (isImageMime(asset.mimeType) ? "🖼" : "📎") : "🔗";
+
+  return (
+    <li className="flex items-center gap-2 rounded-lg bg-ink-700/50 px-3 py-2 text-sm">
+      <span className="flex-none">{icon}</span>
+      <a
+        className="min-w-0 flex-1 truncate text-magenta hover:underline"
+        href={href ?? undefined}
+        target="_blank"
+        rel="noreferrer"
+        download={isUpload ? (asset.fileName ?? undefined) : undefined}
+      >
+        {name}
+      </a>
+      {asset.sizeBytes != null && (
+        <span className="flex-none text-xs text-mist-400">
+          {formatBytes(asset.sizeBytes)}
+        </span>
+      )}
+      <button
+        className="flex-none text-xs text-mist-400 hover:text-red-400"
+        onClick={onRemove}
+      >
+        ✕
+      </button>
+    </li>
   );
 }
 

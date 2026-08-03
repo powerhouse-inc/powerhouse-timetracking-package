@@ -1,5 +1,8 @@
 import type { ContentDefinitionOperations } from "document-models/content/v1";
-import { AssetLinkNotFoundError } from "../../gen/definition/error.js";
+import {
+  AssetLinkNotFoundError,
+  AssetSourceRequiredError,
+} from "../../gen/definition/error.js";
 
 export const contentDefinitionOperations: ContentDefinitionOperations = {
   setTitleOperation(state, action) {
@@ -25,10 +28,19 @@ export const contentDefinitionOperations: ContentDefinitionOperations = {
     state.campaignName = action.input.campaignName || null;
   },
   addAssetLinkOperation(state, action) {
+    if (!action.input.url && !action.input.attachmentRef) {
+      throw new AssetSourceRequiredError(
+        "An asset link needs either a url or an uploaded file",
+      );
+    }
     state.assetLinks.push({
       id: action.input.id,
       label: action.input.label || null,
-      url: action.input.url,
+      url: action.input.url || null,
+      attachmentRef: action.input.attachmentRef || null,
+      fileName: action.input.fileName || null,
+      mimeType: action.input.mimeType || null,
+      sizeBytes: action.input.sizeBytes ?? null,
     });
   },
   updateAssetLinkOperation(state, action) {

@@ -1,7 +1,14 @@
-export type ErrorCode = "AssetLinkNotFoundError";
+export type ErrorCode = "AssetSourceRequiredError" | "AssetLinkNotFoundError";
 
 export interface ReducerError {
   errorCode: ErrorCode;
+}
+
+export class AssetSourceRequiredError extends Error implements ReducerError {
+  errorCode = "AssetSourceRequiredError" as ErrorCode;
+  constructor(message = "AssetSourceRequiredError") {
+    super(message);
+  }
 }
 
 export class AssetLinkNotFoundError extends Error implements ReducerError {
@@ -12,6 +19,7 @@ export class AssetLinkNotFoundError extends Error implements ReducerError {
 }
 
 export const errors = {
+  AddAssetLink: { AssetSourceRequiredError },
   UpdateAssetLink: { AssetLinkNotFoundError },
   RemoveAssetLink: { AssetLinkNotFoundError },
 };

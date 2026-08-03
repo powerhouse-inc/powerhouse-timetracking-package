@@ -482,7 +482,11 @@ export interface ContentStageEvent {
 export interface ContentAssetLink {
   id: string;
   label: string | null;
-  url: string;
+  url: string | null;
+  attachmentRef: string | null;
+  fileName: string | null;
+  mimeType: string | null;
+  sizeBytes: number | null;
 }
 export interface ContentDoc {
   id: string;

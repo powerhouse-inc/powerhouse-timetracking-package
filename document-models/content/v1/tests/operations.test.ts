@@ -197,6 +197,43 @@ describe("Content — optional / falsy branches", () => {
     expect(doc.state.global.assetLinks).toHaveLength(0);
   });
 
+  it("adds uploaded-attachment assets (with full metadata and with none)", () => {
+    let doc = utils.createDocument();
+    // full metadata, no external url
+    doc = reducer(
+      doc,
+      addAssetLink({
+        id: L1,
+        label: "Hero",
+        attachmentRef: "attachment://v1:abc123",
+        fileName: "hero.png",
+        mimeType: "image/png",
+        sizeBytes: 2048,
+      }),
+    );
+    // attachment ref only -> fileName/mimeType/sizeBytes fall back to null
+    doc = reducer(
+      doc,
+      addAssetLink({ id: L2, attachmentRef: "attachment://v1:def456" }),
+    );
+
+    expect(doc.state.global.assetLinks).toHaveLength(2);
+    expect(doc.state.global.assetLinks[0]).toMatchObject({
+      attachmentRef: "attachment://v1:abc123",
+      fileName: "hero.png",
+      mimeType: "image/png",
+      sizeBytes: 2048,
+      url: null,
+    });
+    expect(doc.state.global.assetLinks[1]).toMatchObject({
+      attachmentRef: "attachment://v1:def456",
+      fileName: null,
+      mimeType: null,
+      sizeBytes: null,
+      url: null,
+    });
+  });
+
   it("parks with an actor then resumes (with and without an actor)", () => {
     let doc = utils.createDocument();
     doc = reducer(doc, assignOwner({ owner: "Nik", timestamp: TS }));
@@ -220,6 +257,35 @@ describe("Content — optional / falsy branches", () => {
     doc = reducer(doc, resume({ eventId: ev(), timestamp: TS }));
     expect(doc.state.global.status).toBe("ACTIVE");
     expect(doc.state.global.history.at(-1)?.actor).toBeNull();
+  });
+
+  it("publishes without an actor or note", () => {
+    let doc = utils.createDocument();
+    doc = reducer(doc, assignOwner({ owner: "Nik", timestamp: TS }));
+    doc = reducer(
+      doc,
+      advanceStage({ eventId: ev(), toStage: "DRAFTING", timestamp: TS }),
+    );
+    doc = reducer(
+      doc,
+      advanceStage({ eventId: ev(), toStage: "REVIEW", timestamp: TS }),
+    );
+    doc = reducer(
+      doc,
+      advanceStage({ eventId: ev(), toStage: "SCHEDULED", timestamp: TS }),
+    );
+    doc = reducer(
+      doc,
+      publish({
+        eventId: ev(),
+        publishedUrl: "https://x/p",
+        publishedDate: "2026-09-02T00:00:00.000Z",
+        timestamp: TS,
+      }),
+    );
+    expect(doc.state.global.currentStage).toBe("PUBLISHED");
+    expect(doc.state.global.history.at(-1)?.actor).toBeNull();
+    expect(doc.state.global.history.at(-1)?.note).toBeNull();
   });
 
   it("kills without an actor", () => {
@@ -360,6 +426,15 @@ describe("Content — errors", () => {
     doc = reducer(doc, resume({ eventId: ev(), timestamp: TS }));
     expect(lastError(doc)).toBe("A killed item cannot be resumed");
     expect(doc.state.global.status).toBe("KILLED");
+  });
+
+  it("ADD_ASSET_LINK requires a url or an attachment", () => {
+    let doc = utils.createDocument();
+    doc = reducer(doc, addAssetLink({ id: L1, label: "orphan" }));
+    expect(lastError(doc)).toBe(
+      "An asset link needs either a url or an uploaded file",
+    );
+    expect(doc.state.global.assetLinks).toHaveLength(0);
   });
 
   it("UPDATE_ASSET_LINK and REMOVE_ASSET_LINK reject a missing link", () => {

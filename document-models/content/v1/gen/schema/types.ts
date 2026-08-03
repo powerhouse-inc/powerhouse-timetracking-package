@@ -63,9 +63,13 @@ export type Scalars = {
 };
 
 export type AddAssetLinkInput = {
+  attachmentRef?: InputMaybe<Scalars["String"]["input"]>;
+  fileName?: InputMaybe<Scalars["String"]["input"]>;
   id: Scalars["OID"]["input"];
   label?: InputMaybe<Scalars["String"]["input"]>;
-  url: Scalars["URL"]["input"];
+  mimeType?: InputMaybe<Scalars["String"]["input"]>;
+  sizeBytes?: InputMaybe<Scalars["Int"]["input"]>;
+  url?: InputMaybe<Scalars["URL"]["input"]>;
 };
 
 export type AdvanceStageInput = {
@@ -77,9 +81,13 @@ export type AdvanceStageInput = {
 };
 
 export type AssetLink = {
+  attachmentRef: Maybe<Scalars["String"]["output"]>;
+  fileName: Maybe<Scalars["String"]["output"]>;
   id: Scalars["OID"]["output"];
   label: Maybe<Scalars["String"]["output"]>;
-  url: Scalars["URL"]["output"];
+  mimeType: Maybe<Scalars["String"]["output"]>;
+  sizeBytes: Maybe<Scalars["Int"]["output"]>;
+  url: Maybe<Scalars["URL"]["output"]>;
 };
 
 export type AssignOwnerInput = {

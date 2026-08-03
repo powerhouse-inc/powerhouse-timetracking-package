@@ -78,9 +78,13 @@ export function AddAssetLinkInputSchema(): z.ZodObject<
   Properties<AddAssetLinkInput>
 > {
   return z.object({
+    attachmentRef: z.string().nullish(),
+    fileName: z.string().nullish(),
     id: z.string(),
     label: z.string().nullish(),
-    url: z.url(),
+    mimeType: z.string().nullish(),
+    sizeBytes: z.number().nullish(),
+    url: z.url().nullish(),
   });
 }
 
@@ -99,9 +103,13 @@ export function AdvanceStageInputSchema(): z.ZodObject<
 export function AssetLinkSchema(): z.ZodObject<Properties<AssetLink>> {
   return z.object({
     __typename: z.literal("AssetLink").optional(),
+    attachmentRef: z.string().nullish(),
+    fileName: z.string().nullish(),
     id: z.string(),
     label: z.string().nullish(),
-    url: z.url(),
+    mimeType: z.string().nullish(),
+    sizeBytes: z.number().nullish(),
+    url: z.url().nullish(),
   });
 }
 

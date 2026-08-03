@@ -1684,7 +1684,7 @@ const CONTENT_QUERY = `
               publishedUrl
               publishedDate
               draftUrl
-              assetLinks { id label url }
+              assetLinks { id label url attachmentRef fileName mimeType sizeBytes }
               campaignId
               campaignName
               history { id fromStage toStage actor timestamp note }
@@ -1732,8 +1732,12 @@ export async function createContentItem(title: string): Promise<string> {
 }
 
 export interface NewAssetLinkInput {
-  label: string | null;
-  url: string;
+  label?: string | null;
+  url?: string | null;
+  attachmentRef?: string | null;
+  fileName?: string | null;
+  mimeType?: string | null;
+  sizeBytes?: number | null;
 }
 
 /** One method per content operation. Ids/timestamps are minted client-side. */
@@ -1776,7 +1780,15 @@ export const contentApi = {
   addAssetLink: (docId: string, input: NewAssetLinkInput) =>
     mutate("Content", "addAssetLink", "docId: $docId, input: $input", {
       docId,
-      input: { id: randomId(), label: input.label, url: input.url },
+      input: {
+        id: randomId(),
+        label: input.label ?? null,
+        url: input.url ?? null,
+        attachmentRef: input.attachmentRef ?? null,
+        fileName: input.fileName ?? null,
+        mimeType: input.mimeType ?? null,
+        sizeBytes: input.sizeBytes ?? null,
+      },
     }),
   updateAssetLink: (
     docId: string,
