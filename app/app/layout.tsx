@@ -50,6 +50,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           src="https://umami.monitoring.vetra.io/script.js"
           data-website-id="8da5327f-e423-47ba-99d3-1542800de34b"
           data-domains="phop.vetra.io"
+          data-do-not-track="true"
+          data-exclude-search="true"
+          data-performance="true"
         />
       </head>
       <body className="font-sans antialiased">
