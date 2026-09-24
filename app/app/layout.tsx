@@ -43,6 +43,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             )}`,
           }}
         />
+        {/* Umami analytics (self-hosted). data-domains: count only the
+            production host. The CSP in next.config.mjs allows this origin. */}
+        <script
+          defer
+          src="https://umami.monitoring.vetra.io/script.js"
+          data-website-id="8da5327f-e423-47ba-99d3-1542800de34b"
+          data-domains="phop.vetra.io"
+        />
       </head>
       <body className="font-sans antialiased">
         <Providers>{children}</Providers>

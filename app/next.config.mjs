@@ -5,8 +5,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 // Security headers applied to every response. The CSP allows only same-origin
-// resources (styles/images inline for the design system); the app makes no
-// external network calls (the reactor is reached via the same-origin proxy).
+// resources (styles/images inline for the design system) plus the self-hosted
+// Umami analytics host (its script + the /api/send beacon); the reactor is
+// reached via the same-origin proxy.
+const UMAMI = "https://umami.monitoring.vetra.io";
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -22,9 +24,9 @@ const securityHeaders = [
       "default-src 'self'",
       "img-src 'self' data: https:",
       "style-src 'self' 'unsafe-inline'",
-      "script-src 'self' 'unsafe-inline'",
+      `script-src 'self' 'unsafe-inline' ${UMAMI}`,
       "font-src 'self' data:",
-      "connect-src 'self'",
+      `connect-src 'self' ${UMAMI}`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
